@@ -19,3 +19,6 @@ tmp/
 *.key
 .env
 credentials.*
+logs/*
+!logs/redacted/
+!logs/redacted/**
