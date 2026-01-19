@@ -1,52 +1,15 @@
 ===================================
-    System Information Check
+    Master Node Specifications
 ===================================
 
->> OS Information
-PRETTY_NAME="Debian GNU/Linux 11 (bullseye)"
-VERSION_ID="11"
+Hostname: [MASTER_NODE]
+K3s Version: v1.34.3+k3s1
+OS: Debian GNU/Linux 11 (bullseye)
 Kernel: 5.15.61-v8+
+Architecture: aarch64 (ARM)
+CPU: ARM Cortex-A72 (4 cores)
+Memory: 7.6GB
+Internal IP: [REDACTED]
 
->> CPU Information
-Model: Cortex-A72
-Cores: 4
-Architecture: aarch64
-
->> Memory Information
-Total: 7.6Gi
-Used: 1.0Gi
-Available: 6.5Gi
-
->> Disk Information
-Filesystem      Size  Used Avail Use% Mounted on
-Total: 29G
-Used: 17G (61%)
-Available: 11G
-
->> Network Information
-Hostname: yhgwpi
-IP Addresses:
-  eth0: 192.168.0.17/24
-  wlan0: 192.168.50.173/24
-  tailscale0: 100.125.64.56/32
-  br-7a4a92a01322: 172.18.0.1/16
-  docker0: 172.17.0.1/16
-  flannel.1: 10.42.0.0/32
-  flannel.1: 169.254.101.150/16
-  cni0: 10.42.0.1/24
-  veth188efcd8: 169.254.9.104/16
-  veth59a9cf76: 169.254.238.22/16
-  vethe242e9ee: 169.254.188.49/16
-  veth247358c6: 169.254.21.43/16
-  vetha6e3a7c4: 169.254.5.117/16
-
-===================================
-    Software Check
-===================================
-
-✓ K3s: k3s version v1.34.3+k3s1 (48ffa7b6)
-✓ kubectl: Installed
-✓ containerd: 1.5.16+azure-1
-✗ netdata: Not installed
-
-===================================
+Installation Date: 2026-01-19
+Connection Status: Ready

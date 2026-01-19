@@ -3,7 +3,7 @@
 ## Master Node Installation
 
 Date: 2026-01-19 18:39:02 KST
-Hostname: yhgwpi
+Hostname: [MASTER_NODE]
 K3s Version: v1.34.3+k3s1
 
 ### Installation
@@ -17,7 +17,7 @@ Memory usage at startup: 1.4GB
 
 ### Connection Information
 
-Master IP (Tailscale): 100.125.64.56
+Master IP: [REDACTED - Tailscale VPN]
 Port: 6443
 
 Note: Token stored in `/var/lib/rancher/k3s/server/node-token` on master node.
@@ -26,12 +26,10 @@ Note: Token stored in `/var/lib/rancher/k3s/server/node-token` on master node.
 
 SSH to worker node and run:
 ```bash
-curl -sfL https://get.k3s.io | K3S_URL=https://100.125.64.56:6443 \
-  K3S_TOKEN=$(cat /var/lib/rancher/k3s/server/node-token) \
+curl -sfL https://get.k3s.io | K3S_URL=https://[MASTER_IP]:6443 \
+  K3S_TOKEN=[REDACTED] \
   sh -
 ```
-
-Or manually with token from master.
 
 ## Next Steps
 
@@ -43,19 +41,15 @@ Or manually with token from master.
 ## Worker Node Installation
 
 Date: 2026-01-19
-Hostname: yhsensorpi
+Hostname: [WORKER_NODE]
 Status: Connected successfully
 
 Cluster Status:
 ```
-NAME         STATUS   ROLES           AGE     VERSION
-yhgwpi       Ready    control-plane   10m     v1.34.3+k3s1
-yhsensorpi   Ready    <none>          3m      v1.34.3+k3s1
+NAME            STATUS   ROLES           AGE     VERSION
+master-node     Ready    control-plane   10m     v1.34.3+k3s1
+worker-node     Ready    <none>          3m      v1.34.3+k3s1
 ```
 
 Total Pods Running: 8
-- coredns: 1
-- traefik: 1 + 2 svclb
-- metrics-server: 1
-- local-path-provisioner: 1
-- helm jobs: 2 (completed)
+System pods operational (coredns, traefik, metrics-server, etc.)
