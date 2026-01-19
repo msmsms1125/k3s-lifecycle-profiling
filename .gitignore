@@ -1,0 +1,21 @@
+# Data files
+data/*.csv
+data/**/*.csv
+*.dat
+
+# Logs
+*.log
+logs/
+
+# Temporary
+tmp/
+*.tmp
+.DS_Store
+*.swp
+*~
+
+# Credentials
+*.token
+*.key
+.env
+credentials.*
