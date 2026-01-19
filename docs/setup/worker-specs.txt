@@ -1,0 +1,13 @@
+===================================
+    Worker Node Specifications
+===================================
+
+Hostname: yhsensorpi
+K3s Version: v1.34.3+k3s1
+OS: Debian GNU/Linux 11 (bullseye)
+Kernel: 5.15.61-v8+
+Architecture: aarch64 (ARM)
+Internal IP: 192.168.50.162
+
+Installation Date: 2026-01-19
+Connection Status: Ready
