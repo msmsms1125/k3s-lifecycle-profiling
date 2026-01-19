@@ -1,0 +1,4 @@
+EVENT system_idle_start epoch=1768826495
+EVENT system_idle_end   epoch=1768826855
+RUN_ID=system_idle_20260119_215622
+NOTE=k3s stopped on master, settle 60s, measure 300s
