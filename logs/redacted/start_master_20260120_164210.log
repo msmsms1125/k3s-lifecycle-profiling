@@ -1,0 +1,4 @@
+EVENT start_master_start 2026-01-20 16:42:10 (epoch=1768894930)
+WAIT: master Ready...
+EVENT start_master_ready 2026-01-20 16:42:21 (epoch=1768894941) rc=0
+EVENT start_master_end 2026-01-20 16:43:21 (epoch=1768895001)
