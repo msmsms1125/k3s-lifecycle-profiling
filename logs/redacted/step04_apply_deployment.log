@@ -1,0 +1,29 @@
+=== [Step 4] Apply Deployment Experiment Start ===
+DEPLOY_START: 2026-01-21 16:41:33.000000000
+DEPLOY_END: 2026-01-21 16:42:11.000000000
+Duration(ms): 37945
+Running Python Analysis...
+=== [Step 4] Apply Deployment Experiment (3 Runs) Start ===
+
+----------------------------------------
+Starting Run #1...
+----------------------------------------
+Run 1_DEPLOY_START: 2026-01-21 16:47:21.000000000
+Run 1_DEPLOY_END: 2026-01-21 16:47:25.000000000
+Run 1_Duration(ms): 4493
+
+----------------------------------------
+Starting Run #2...
+----------------------------------------
+Run 2_DEPLOY_START: 2026-01-21 16:52:31.000000000
+Run 2_DEPLOY_END: 2026-01-21 16:52:40.000000000
+Run 2_Duration(ms): 9006
+
+----------------------------------------
+Starting Run #3...
+----------------------------------------
+Run 3_DEPLOY_START: 2026-01-21 16:57:45.000000000
+Run 3_DEPLOY_END: 2026-01-21 16:57:50.000000000
+Run 3_Duration(ms): 5160
+All 3 runs completed.
+Running Python Analysis...
