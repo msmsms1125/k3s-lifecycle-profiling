@@ -1,0 +1,32 @@
+=== [Step 6] Scale Up/Down (3 Iterations) Start ===
+
+=== Run 1 Start ===
+Run 1: Starting Scale UP (1 -> 3)...
+Run 1_SCALE_UP_START: 2026-01-21 21:10:47.000000000
+Run 1_SCALE_UP_END: 2026-01-21 21:10:55.000000000
+Run 1_Duration_Up(ms): 8226
+Run 1: Starting Scale DOWN (3 -> 1)...
+Run 1_SCALE_DOWN_START: 2026-01-21 21:11:25.000000000
+Run 1_SCALE_DOWN_END: 2026-01-21 21:11:26.000000000
+Run 1_Duration_Down(ms): 764
+
+=== Run 2 Start ===
+Run 2: Starting Scale UP (1 -> 3)...
+Run 2_SCALE_UP_START: 2026-01-21 21:11:56.000000000
+Run 2_SCALE_UP_END: 2026-01-21 21:12:00.000000000
+Run 2_Duration_Up(ms): 4519
+Run 2: Starting Scale DOWN (3 -> 1)...
+Run 2_SCALE_DOWN_START: 2026-01-21 21:12:30.000000000
+Run 2_SCALE_DOWN_END: 2026-01-21 21:12:31.000000000
+Run 2_Duration_Down(ms): 788
+
+=== Run 3 Start ===
+Run 3: Starting Scale UP (1 -> 3)...
+Run 3_SCALE_UP_START: 2026-01-21 21:13:01.000000000
+Run 3_SCALE_UP_END: 2026-01-21 21:13:08.000000000
+Run 3_Duration_Up(ms): 6451
+Run 3: Starting Scale DOWN (3 -> 1)...
+Run 3_SCALE_DOWN_START: 2026-01-21 21:13:38.000000000
+Run 3_SCALE_DOWN_END: 2026-01-21 21:13:38.000000000
+Run 3_Duration_Down(ms): 828
+=== [Step 6] Experiment Finished ===
