@@ -7,11 +7,17 @@ import matplotlib.dates as mdates
 from datetime import datetime
 
 # ==========================================
-# 경로 설정
+# 경로 설정 (구조에 맞게 수정됨)
 # ==========================================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LOG_PATH = os.path.join(BASE_DIR, "results/step05_deployment_idle/step05_deployment_idle.log")
+
+# 로그는 logs/redacted 에서 읽기
+LOG_PATH = os.path.join(BASE_DIR, "logs/redacted/step05_deployment_idle.log")
+
+# Netdata CSV
 CSV_PATH = os.path.join(BASE_DIR, "netdata.csv")
+
+# 결과(통계/그래프)는 results/step05_deployment_idle 에 저장
 OUT_DIR  = os.path.join(BASE_DIR, "results/step05_deployment_idle")
 
 OUT_STATS_CSV = os.path.join(OUT_DIR, "step05_stats.csv")
@@ -29,7 +35,6 @@ def parse_logs():
     with open(LOG_PATH, "r", encoding="utf-8", errors="ignore") as f:
         for line in f:
             if "IDLE_START:" in line:
-                # 2026-01-21 17:00:00.0000 -> 자르기
                 t_str = line.split("IDLE_START:")[1].strip()
                 if "." in t_str: t_str = t_str.split(".")[0] + "." + t_str.split(".")[1][:6]
                 start_time = datetime.strptime(t_str, "%Y-%m-%d %H:%M:%S.%f")
@@ -60,8 +65,8 @@ def analyze_and_plot(start, end):
             print("[WARNING] No data found in the IDLE time range.")
             return
 
-        # 1. 통계 계산 (평균 CPU 등)
-        data_col = df.columns[1] # 두 번째 컬럼(CPU 등) 사용
+        # 1. 통계 계산
+        data_col = df.columns[1] 
         avg_val = idle_df[data_col].mean()
         max_val = idle_df[data_col].max()
         
@@ -80,7 +85,6 @@ def analyze_and_plot(start, end):
         plt.figure(figsize=(12, 6))
         plt.plot(df['time'], df[data_col], label=f"System {data_col}", color='#1f77b4', linewidth=1)
         
-        # Idle 구간 강조 (초록색)
         plt.axvspan(start, end, color='green', alpha=0.15, label="Deployment Idle (300s)")
         plt.axvline(start, color='green', linestyle='--')
         plt.axvline(end, color='green', linestyle='--')
