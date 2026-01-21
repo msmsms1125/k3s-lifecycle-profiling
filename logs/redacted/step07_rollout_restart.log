@@ -1,0 +1,20 @@
+=== [Step 7] Rollout Restart (3 Iterations) Start ===
+
+=== Run 1 Start ===
+Run 1_RESTART_START: 2026-01-21 22:23:35.000000000
+Executing: kubectl rollout restart deployment/nginx-deployment
+Run 1_RESTART_END: 2026-01-21 22:23:47.000000000
+Run 1_Duration(ms): 12263
+
+=== Run 2 Start ===
+Run 2_RESTART_START: 2026-01-21 22:24:18.000000000
+Executing: kubectl rollout restart deployment/nginx-deployment
+Run 2_RESTART_END: 2026-01-21 22:24:30.000000000
+Run 2_Duration(ms): 12882
+
+=== Run 3 Start ===
+Run 3_RESTART_START: 2026-01-21 22:25:00.000000000
+Executing: kubectl rollout restart deployment/nginx-deployment
+Run 3_RESTART_END: 2026-01-21 22:25:12.000000000
+Run 3_Duration(ms): 11234
+=== [Step 7] Experiment Finished ===
