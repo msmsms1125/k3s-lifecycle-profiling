@@ -1,0 +1,17 @@
+=== [Step 8] Cordon/Uncordon Experiment Start (Node: yhgwpi) ===
+
+--- Phase 1: Cordon Worker ---
+CORDON_START: 2026-01-21 22:46:10.000000000
+CORDON_END: 2026-01-21 22:46:11.000000000
+Worker node 'yhgwpi' is now cordoned.
+
+--- Phase 2: Scale Up to 3 (Expect Pending) ---
+SCALE_START: 2026-01-21 22:47:11.000000000
+Current Pending Pods: 0
+
+--- Phase 3: Uncordon Worker (Recovery) ---
+UNCORDON_START: 2026-01-21 22:47:41.000000000
+RECOVERY_END: 2026-01-21 22:47:42.000000000
+Duration_Pending_Wait(ms): 30741
+Duration_Recovery(ms): 721
+=== [Step 8] Experiment Finished ===
