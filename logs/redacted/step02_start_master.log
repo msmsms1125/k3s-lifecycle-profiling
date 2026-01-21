@@ -1,0 +1,20 @@
+EVENT start_master_start 2026-01-20 15:37:29 (epoch=1768891049)
+WAIT: master Ready...
+EVENT start_master_ready 2026-01-20 15:37:40 (epoch=1768891060) rc=0
+EVENT start_master_end 2026-01-20 15:38:40 (epoch=1768891120)
+RUN_ID=start_master_20260120_153729
+START_EPOCH=1768891049
+READY_EPOCH=1768891060
+END_EPOCH=1768891120
+EVENT start_master_start 2026-01-20 15:52:38 (epoch=1768891958)
+WAIT: master Ready...
+EVENT start_master_ready 2026-01-20 15:52:50 (epoch=1768891970) rc=0
+EVENT start_master_end 2026-01-20 15:53:50 (epoch=1768892030)
+RUN_ID=start_master_20260120_155238
+START_EPOCH=1768891958
+READY_EPOCH=1768891970
+END_EPOCH=1768892030
+EVENT start_master_start 2026-01-20 16:42:10 (epoch=1768894930)
+WAIT: master Ready...
+EVENT start_master_ready 2026-01-20 16:42:21 (epoch=1768894941) rc=0
+EVENT start_master_end 2026-01-20 16:43:21 (epoch=1768895001)
