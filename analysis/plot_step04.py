@@ -2,128 +2,143 @@
 import os
 import re
 import csv
-from statistics import mean, pstdev
+import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from datetime import datetime
+from statistics import mean, pstdev
 
-LOG_PATH = "logs/redacted/step04_apply_deployment.log"
-OUT_DIR = "results/step04_apply_deployment"
-OUT_PNG = os.path.join(OUT_DIR, "step04_apply_deployment_plot.png")
-OUT_CSV = os.path.join(OUT_DIR, "step04_apply_deployment_stats.csv")
+# ==========================================
+# 경로 설정
+# ==========================================
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOG_PATH = os.path.join(BASE_DIR, "results/step04_apply_deployment/step04_apply_deployment.log")
+CSV_PATH = os.path.join(BASE_DIR, "netdata.csv")
+OUT_DIR  = os.path.join(BASE_DIR, "results/step04_apply_deployment")
 
-# 로그 예시에서 잡아낼 패턴들:
-# Run 1_DEPLOY_START: ...
-# Run 1_DEPLOY_END: ...
-# Run 1_Duration(ms): 4493
-# Duration(ms): 37945  (단일 1회 측정일 수도 있어서 같이 지원)
+# 결과 파일명
+OUT_STATS_CSV = os.path.join(OUT_DIR, "step04_stats.csv")
+OUT_GRAPH_PNG = os.path.join(OUT_DIR, "step04_resource_graph.png")
+
+# 정규표현식
 re_run_start = re.compile(r"Run\s*(\d+)_DEPLOY_START:\s*(.+)")
 re_run_end   = re.compile(r"Run\s*(\d+)_DEPLOY_END:\s*(.+)")
 re_run_dur   = re.compile(r"Run\s*(\d+)_Duration\(ms\):\s*(\d+)")
-re_single_start = re.compile(r"DEPLOY_START:\s*(.+)")
-re_single_end   = re.compile(r"DEPLOY_END:\s*(.+)")
-re_single_dur   = re.compile(r"Duration\(ms\):\s*(\d+)")
 
-def main():
-    os.makedirs(OUT_DIR, exist_ok=True)
+def parse_timestamp(time_str):
+    """나노초(9자리)를 마이크로초(6자리)로 자르고 datetime 객체로 변환"""
+    try:
+        if "." in time_str:
+            main_part, frac_part = time_str.split(".")
+            # Python datetime은 6자리까지만 지원하므로 절삭
+            time_str = f"{main_part}.{frac_part[:6]}"
+        return datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S.%f")
+    except ValueError:
+        return datetime.strptime(time_str.split(".")[0], "%Y-%m-%d %H:%M:%S")
 
-    if not os.path.exists(LOG_PATH):
-        raise FileNotFoundError(f"Log not found: {LOG_PATH}")
+def parse_logs():
+    """로그 파일 파싱"""
+    target_log = LOG_PATH
+    if not os.path.exists(target_log):
+        # logs/redacted 폴더 확인
+        alt_path = os.path.join(BASE_DIR, "logs/redacted/step04_apply_deployment.log")
+        if os.path.exists(alt_path):
+            target_log = alt_path
+        else:
+            print(f"[ERROR] Log file not found at: {LOG_PATH}")
+            return {}
 
-    with open(LOG_PATH, "r", encoding="utf-8", errors="ignore") as f:
+    print(f"Reading Log: {target_log}")
+    with open(target_log, "r", encoding="utf-8", errors="ignore") as f:
         lines = f.readlines()
 
-    # run별 정보
-    runs = {}  # run_id -> dict(start,end,duration_ms)
-    single = {"start": None, "end": None, "duration_ms": None}
-
+    runs = {}
     for line in lines:
         line = line.strip()
-
+        
         m = re_run_start.search(line)
         if m:
             rid = int(m.group(1))
-            runs.setdefault(rid, {})["start"] = m.group(2).strip()
+            runs.setdefault(rid, {})["start"] = parse_timestamp(m.group(2).strip())
             continue
-
+        
         m = re_run_end.search(line)
         if m:
             rid = int(m.group(1))
-            runs.setdefault(rid, {})["end"] = m.group(2).strip()
+            runs.setdefault(rid, {})["end"] = parse_timestamp(m.group(2).strip())
             continue
 
         m = re_run_dur.search(line)
         if m:
             rid = int(m.group(1))
             runs.setdefault(rid, {})["duration_ms"] = int(m.group(2))
-            continue
 
-        # 단일 측정도 같이 파싱(있으면 CSV에 포함)
-        m = re_single_start.search(line)
-        if m and "Run" not in line:
-            single["start"] = m.group(1).strip()
-            continue
+    return runs
 
-        m = re_single_end.search(line)
-        if m and "Run" not in line:
-            single["end"] = m.group(1).strip()
-            continue
+def save_stats(runs):
+    """통계 저장"""
+    if not runs:
+        return
 
-        m = re_single_dur.search(line)
-        if m and "Run" not in line:
-            # 단일 Duration(ms) 라인이 run duration과 섞일 수 있어서 "Run" 없는 줄만
-            single["duration_ms"] = int(m.group(1))
-            continue
-
-    # run 데이터 정리
     run_rows = []
+    durations = []
+    
     for rid in sorted(runs.keys()):
         d = runs[rid]
         if "duration_ms" in d:
-            run_rows.append([
-                f"run_{rid}",
-                d.get("start", ""),
-                d.get("end", ""),
-                d["duration_ms"]
-            ])
+            run_rows.append([f"run_{rid}", d["duration_ms"]])
+            durations.append(d["duration_ms"])
 
-    # 단일 측정이 있으면 추가(있을 때만)
-    if single["duration_ms"] is not None:
-        run_rows.insert(0, ["single", single.get("start",""), single.get("end",""), single["duration_ms"]])
-
-    if not run_rows:
-        raise RuntimeError("No durations found in log. Check log format or file path.")
-
-    # CSV 저장
-    with open(OUT_CSV, "w", newline="", encoding="utf-8") as f:
+    with open(OUT_STATS_CSV, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["label", "deploy_start", "deploy_end", "duration_ms"])
+        w.writerow(["label", "duration_ms"])
         w.writerows(run_rows)
-
-        # run_1~run_3만으로 summary 내고 싶으면 single 제외하고 계산
-        durations = [row[3] for row in run_rows if str(row[0]).startswith("run_")]
+        
         if durations:
             w.writerow([])
-            w.writerow(["summary_for_runs_only", "", "", ""])
-            w.writerow(["mean_ms", "", "", f"{mean(durations):.2f}"])
-            w.writerow(["pstdev_ms", "", "", f"{pstdev(durations):.2f}"])
-            w.writerow(["min_ms", "", "", f"{min(durations)}"])
-            w.writerow(["max_ms", "", "", f"{max(durations)}"])
+            w.writerow(["mean_ms", f"{mean(durations):.2f}"])
+            if len(durations) > 1:
+                w.writerow(["stdev_ms", f"{pstdev(durations):.2f}"])
+            
+    print(f"[INFO] Stats saved: {OUT_STATS_CSV}")
 
-    # Plot 저장(간단: run들만)
-    labels = [row[0] for row in run_rows if row[0] != "single"]
-    values = [row[3] for row in run_rows if row[0] != "single"]
+def plot_graph(runs):
+    """그래프 그리기"""
+    if not os.path.exists(CSV_PATH):
+        print(f"[WARNING] 'netdata.csv' not found. Skipping graph generation.")
+        return
 
-    plt.figure()
-    plt.bar(labels, values)
-    plt.title("Step04 Apply Deployment - Duration (ms)")
-    plt.xlabel("run")
-    plt.ylabel("duration_ms")
-    plt.tight_layout()
-    plt.savefig(OUT_PNG, dpi=200)
-    plt.close()
+    try:
+        df = pd.read_csv(CSV_PATH)
+        df.columns = [c.strip().lower() for c in df.columns]
+        df['time'] = pd.to_datetime(df['time'])
 
-    print(f"[OK] saved: {OUT_PNG}")
-    print(f"[OK] saved: {OUT_CSV}")
+        plt.figure(figsize=(12, 6))
+        data_col = df.columns[1] 
+        plt.plot(df['time'], df[data_col], label=f"System {data_col}")
+
+        colors = ['red', 'green', 'orange']
+        for rid, data in runs.items():
+            if 'start' in data and 'end' in data:
+                c = colors[(rid-1) % len(colors)]
+                plt.axvspan(data['start'], data['end'], color=c, alpha=0.2, label=f"Run {rid}")
+
+        plt.legend(loc='upper right')
+        plt.gcf().autofmt_xdate()
+        plt.savefig(OUT_GRAPH_PNG)
+        print(f"[INFO] Graph saved: {OUT_GRAPH_PNG}")
+
+    except Exception as e:
+        print(f"[ERROR] Graph generation failed: {e}")
+
+def main():
+    os.makedirs(OUT_DIR, exist_ok=True)
+    runs = parse_logs()
+    if runs:
+        save_stats(runs)
+        plot_graph(runs)
+    else:
+        print("[ERROR] No valid run data found.")
 
 if __name__ == "__main__":
     main()
-
