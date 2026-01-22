@@ -21,3 +21,4 @@ credentials.*
 logs/*
 !logs/redacted/
 !logs/redacted/**
+.venv/

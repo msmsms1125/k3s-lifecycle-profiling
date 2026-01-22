@@ -1,0 +1,11 @@
+STEP=step01_system_idle
+RUN=run_3
+NETDATA_URL=http://127.0.0.1:19999
+DURATION_SEC=300
+[1] stop cluster services
+[2] mark start/end epoch
+START_EPOCH=1769057195
+END_EPOCH=1769057495
+[3] sleep (collect baseline window)
+[4] export netdata csv
+[5] copy redacted.log into results (git minimum set)
