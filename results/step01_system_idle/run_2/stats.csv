@@ -1,2 +1,2 @@
-run,cpu_avg,cpu_peak,ram_avg,ram_peak,ram_col
-run_2,6.684809781666667,13.6436177,850.3120326666666,851.93438,used
+run,cpu_avg,cpu_peak,ram_avg,ram_peak,ram_col,disk_util_avg,disk_util_peak,disk_util_col,disk_read_avg,disk_read_peak,disk_read_col,disk_write_avg,disk_write_peak,disk_write_col
+run_2,6.684809781666667,13.6436177,850.3120326666666,851.93438,used,1.43,7.0,utilization,42.4799995,224.0,reads,-36.35005757166667,0.0,writes
