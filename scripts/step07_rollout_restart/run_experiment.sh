@@ -1,66 +1,94 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# ==========================================
-# 설정
-# ==========================================
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# 프로젝트 루트: scripts/step07... (2단계) -> ../..
-PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-LOG_DIR="$PROJECT_ROOT/logs/redacted"
-LOG_FILE="$LOG_DIR/step07_rollout_restart.log"
+STEP="step07_rollout_restart"
+RUNS="${RUNS:-10}"
+DEPLOY="${DEPLOY:-nginx}"
 
-# 로그 폴더 생성
-mkdir -p "$LOG_DIR"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+LOG_DIR="${REPO_ROOT}/logs/redacted/${STEP}"
+DATA_DIR="${REPO_ROOT}/data/netdata/${STEP}"
+RES_DIR="${REPO_ROOT}/results/${STEP}"
 
-echo "=== [Step 7] Rollout Restart (3 Iterations) Start ===" | tee "$LOG_FILE"
+NETDATA_URL="${NETDATA_URL:-http://127.0.0.1:19999}"
 
-# 0. 사전 확인
-if ! kubectl get deployment nginx-deployment &> /dev/null; then
-    echo "[ERROR] nginx-deployment not found! Run Step 4 first." | tee -a "$LOG_FILE"
-    exit 1
-fi
+CPU_CHART="${CPU_CHART:-system.cpu}"
+RAM_CHART="${RAM_CHART:-system.ram}"
+DISK_UTIL_CHART="${DISK_UTIL_CHART:-disk_util.mmcblk0}"
+IO_CHART="${IO_CHART:-system.io}"
 
-# 초기 상태 확인 (Replicas가 1개인지 3개인지? Step 6 끝났으면 1개일 것임)
-# 공정한 테스트를 위해 3개로 맞추고 시작할까요? 아니면 1개? 
-# 보통 운영 환경은 다중 파드이므로 3개로 맞추고 테스트하겠습니다.
-echo "Initializing to 3 replicas for Rolling Update test..."
-kubectl scale deployment nginx-deployment --replicas=3
-kubectl rollout status deployment/nginx-deployment
-sleep 10
+MANIFEST="${MANIFEST:-${REPO_ROOT}/scripts/step04_apply_deployment/nginx-deployment.yaml}"
 
-# ====================================================
-# 3회 반복 실험 시작
-# ====================================================
-for i in {1..3}
-do
-    echo "" | tee -a "$LOG_FILE"
-    echo "=== Run $i Start ===" | tee -a "$LOG_FILE"
+mkdir -p "${LOG_DIR}" "${DATA_DIR}" "${RES_DIR}"
 
-    # 1. Start Log
-    RESTART_START=$(date +%s%N)
-    echo "Run ${i}_RESTART_START: $(date -d @${RESTART_START:0:10} '+%Y-%m-%d %H:%M:%S.%N')" | tee -a "$LOG_FILE"
+require_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "missing command: $1" >&2; exit 1; }; }
+require_cmd date
+require_cmd kubectl
+require_cmd curl
+require_cmd python3
 
-    # 2. Command Execution (재배포 명령)
-    echo "Executing: kubectl rollout restart deployment/nginx-deployment" | tee -a "$LOG_FILE"
-    kubectl rollout restart deployment/nginx-deployment
+calc_points() {
+  local after="$1" before="$2"
+  local dur=$((before - after))
+  local p=$(( (dur + 4) / 5 ))
+  if (( p < 2 )); then p=2; fi
+  echo "${p}"
+}
 
-    # 3. Wait for Rollout (완료 대기)
-    if ! kubectl rollout status deployment/nginx-deployment --timeout=300s; then
-        echo "[ERROR] Run ${i} Timed out!" | tee -a "$LOG_FILE"
-        exit 1
-    fi
+export_csv() {
+  local chart="$1" after="$2" before="$3" out="$4"
+  local points; points="$(calc_points "${after}" "${before}")"
+  curl -sS -G "${NETDATA_URL}/api/v1/data" \
+    --data-urlencode "chart=${chart}" \
+    --data-urlencode "after=${after}" \
+    --data-urlencode "before=${before}" \
+    --data-urlencode "group=average" \
+    --data-urlencode "points=${points}" \
+    --data-urlencode "format=csv" \
+    --data-urlencode "options=seconds,flip" \
+    > "${out}"
+}
 
-    # 4. End Log
-    RESTART_END=$(date +%s%N)
-    echo "Run ${i}_RESTART_END: $(date -d @${RESTART_END:0:10} '+%Y-%m-%d %H:%M:%S.%N')" | tee -a "$LOG_FILE"
+prep_rollout() {
+  kubectl wait --for=condition=Ready nodes --all --timeout=180s >/dev/null
+  if ! kubectl get deploy/"${DEPLOY}" >/dev/null 2>&1; then
+    [[ -f "${MANIFEST}" ]] && kubectl apply -f "${MANIFEST}" >/dev/null
+  fi
+  kubectl rollout status deploy/"${DEPLOY}" --timeout=300s >/dev/null
+}
 
-    # 5. Duration Calculation
-    DURATION=$(( (RESTART_END - RESTART_START) / 1000000 ))
-    echo "Run ${i}_Duration(ms): $DURATION" | tee -a "$LOG_FILE"
+echo "[${STEP}] RUNS=${RUNS}, deploy=${DEPLOY}"
+echo "[${STEP}] charts cpu=${CPU_CHART} ram=${RAM_CHART} disk_util=${DISK_UTIL_CHART} io=${IO_CHART}"
 
-    # 6. Cooldown (다음 런을 위해 대기)
-    echo "Cooldown for 30s..."
-    sleep 30
+for i in $(seq 1 "${RUNS}"); do
+  echo "== [${STEP}] run_${i}/${RUNS} =="
+
+  prep_rollout
+
+  RUN_LOG="${LOG_DIR}/run_${i}.log"
+  RUN_DATA="${DATA_DIR}/run_${i}"
+  mkdir -p "${RUN_DATA}"
+
+  START_EPOCH="$(date +%s)"
+  kubectl rollout restart deploy/"${DEPLOY}" >/dev/null
+  kubectl rollout status deploy/"${DEPLOY}" --timeout=300s >/dev/null
+  END_EPOCH="$(date +%s)"
+
+  T_TOTAL="$((END_EPOCH - START_EPOCH))"
+
+  cat > "${RUN_LOG}" <<EOL
+STEP=${STEP}
+RUN=${i}
+START_EPOCH=${START_EPOCH}
+END_EPOCH=${END_EPOCH}
+T_total=${T_TOTAL}
+EOL
+
+  export_csv "${CPU_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_cpu.csv"
+  export_csv "${RAM_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_ram.csv"
+  export_csv "${DISK_UTIL_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/disk_util_mmcblk0.csv"
+  export_csv "${IO_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/disk_io_mmcblk0.csv"
 done
 
-echo "=== [Step 7] Experiment Finished ===" | tee -a "$LOG_FILE"
+python3 "${REPO_ROOT}/analysis/plot_step07.py" --step "${STEP}"
+echo "[DONE] ${STEP}"
