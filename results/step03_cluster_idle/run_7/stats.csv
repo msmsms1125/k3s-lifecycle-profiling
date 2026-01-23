@@ -1,0 +1,2 @@
+step,run,START_EPOCH,READY_EPOCH,END_EPOCH,T_ready,T_total,cpu_mean,cpu_peak,cpu_auc,ram_mean,ram_peak,ram_auc,disk_util_mean,disk_util_peak,disk_util_auc,disk_util_col
+step03_cluster_idle,7,1769147873,,1769148173,,300,8.9752154,19.1419272,2648.492845,1331.9933377783332,1343.17734,392941.83076675003,2.9600000000000004,65.4,877.0,utilization
