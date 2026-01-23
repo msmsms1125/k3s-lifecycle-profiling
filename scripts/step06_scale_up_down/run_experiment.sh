@@ -1,86 +1,122 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# 설정
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# 프로젝트 루트: scripts/step06_scale_up_down (2단계) -> ../..
-PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-LOG_DIR="$PROJECT_ROOT/logs/redacted"
-LOG_FILE="$LOG_DIR/step06_scale.log"
+STEP="step06_scale_up_down"
+RUNS="${RUNS:-10}"
+DEPLOY="${DEPLOY:-nginx}"
+REPLICAS_HIGH="${REPLICAS_HIGH:-3}"
+REPLICAS_LOW="${REPLICAS_LOW:-1}"
 
-# 폴더 생성
-mkdir -p "$LOG_DIR"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+LOG_DIR="${REPO_ROOT}/logs/redacted/${STEP}"
+DATA_DIR="${REPO_ROOT}/data/netdata/${STEP}"
+RES_DIR="${REPO_ROOT}/results/${STEP}"
 
-echo "=== [Step 6] Scale Up/Down (3 Iterations) Start ===" | tee "$LOG_FILE"
+NETDATA_URL="${NETDATA_URL:-http://127.0.0.1:19999}"
 
-# 0. 사전 확인 (Nginx가 떠 있어야 함)
-if ! kubectl get deployment nginx-deployment &> /dev/null; then
-    echo "[ERROR] nginx-deployment not found! Run Step 4 first." | tee -a "$LOG_FILE"
-    exit 1
-fi
+CPU_CHART="${CPU_CHART:-system.cpu}"
+RAM_CHART="${RAM_CHART:-system.ram}"
+DISK_UTIL_CHART="${DISK_UTIL_CHART:-disk_util.mmcblk0}"
+IO_CHART="${IO_CHART:-system.io}"
 
-# 초기 상태 강제 설정 (1개)
-echo "Initializing to 1 replica..."
-kubectl scale deployment nginx-deployment --replicas=1
-kubectl rollout status deployment/nginx-deployment
-sleep 5
+MANIFEST="${MANIFEST:-${REPO_ROOT}/scripts/step04_apply_deployment/nginx-deployment.yaml}"
 
-# ====================================================
-# 3회 반복 실험 시작
-# ====================================================
-for i in {1..3}
-do
-    echo "" | tee -a "$LOG_FILE"
-    echo "=== Run $i Start ===" | tee -a "$LOG_FILE"
+mkdir -p "${LOG_DIR}" "${DATA_DIR}" "${RES_DIR}"
 
-    # ---------------------------------------------------------
-    # 1. Scale Up (1 -> 3)
-    # ---------------------------------------------------------
-    echo "Run ${i}: Starting Scale UP (1 -> 3)..." | tee -a "$LOG_FILE"
-    
-    SCALE_UP_START=$(date +%s%N)
-    echo "Run ${i}_SCALE_UP_START: $(date -d @${SCALE_UP_START:0:10} '+%Y-%m-%d %H:%M:%S.%N')" | tee -a "$LOG_FILE"
+require_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "missing command: $1" >&2; exit 1; }; }
+require_cmd date
+require_cmd kubectl
+require_cmd curl
+require_cmd python3
 
-    kubectl scale deployment nginx-deployment --replicas=3
-    
-    if ! kubectl rollout status deployment/nginx-deployment --timeout=300s; then
-        echo "[ERROR] Run ${i} Scale Up Timed out!" | tee -a "$LOG_FILE"
-        exit 1
-    fi
+calc_points() {
+  local after="$1" before="$2"
+  local dur=$((before - after))
+  local p=$(( (dur + 4) / 5 ))
+  if (( p < 2 )); then p=2; fi
+  echo "${p}"
+}
 
-    SCALE_UP_END=$(date +%s%N)
-    echo "Run ${i}_SCALE_UP_END: $(date -d @${SCALE_UP_END:0:10} '+%Y-%m-%d %H:%M:%S.%N')" | tee -a "$LOG_FILE"
-    
-    DURATION_UP=$(( (SCALE_UP_END - SCALE_UP_START) / 1000000 ))
-    echo "Run ${i}_Duration_Up(ms): $DURATION_UP" | tee -a "$LOG_FILE"
+export_csv() {
+  local chart="$1" after="$2" before="$3" out="$4"
+  local points; points="$(calc_points "${after}" "${before}")"
+  curl -sS -G "${NETDATA_URL}/api/v1/data" \
+    --data-urlencode "chart=${chart}" \
+    --data-urlencode "after=${after}" \
+    --data-urlencode "before=${before}" \
+    --data-urlencode "group=average" \
+    --data-urlencode "points=${points}" \
+    --data-urlencode "format=csv" \
+    --data-urlencode "options=seconds,flip" \
+    > "${out}"
+}
 
-    # 안정화 (Scale Up 상태 유지)
-    echo "Stabilizing for 30s..."
-    sleep 30
+prep_scale() {
+  kubectl wait --for=condition=Ready nodes --all --timeout=180s >/dev/null
 
-    # ---------------------------------------------------------
-    # 2. Scale Down (3 -> 1)
-    # ---------------------------------------------------------
-    echo "Run ${i}: Starting Scale DOWN (3 -> 1)..." | tee -a "$LOG_FILE"
+  # deployment 보장(없으면 apply)
+  if ! kubectl get deploy/"${DEPLOY}" >/dev/null 2>&1; then
+    [[ -f "${MANIFEST}" ]] && kubectl apply -f "${MANIFEST}" >/dev/null
+  fi
 
-    SCALE_DOWN_START=$(date +%s%N)
-    echo "Run ${i}_SCALE_DOWN_START: $(date -d @${SCALE_DOWN_START:0:10} '+%Y-%m-%d %H:%M:%S.%N')" | tee -a "$LOG_FILE"
+  # 시작 상태를 replicas=3으로 맞춤(최대한)
+  kubectl scale deploy/"${DEPLOY}" --replicas="${REPLICAS_HIGH}" >/dev/null 2>&1 || true
+  kubectl rollout status deploy/"${DEPLOY}" --timeout=300s >/dev/null
+}
 
-    kubectl scale deployment nginx-deployment --replicas=1
+echo "[${STEP}] RUNS=${RUNS}, down ${REPLICAS_HIGH}->${REPLICAS_LOW}, up ${REPLICAS_LOW}->${REPLICAS_HIGH}"
+echo "[${STEP}] charts cpu=${CPU_CHART} ram=${RAM_CHART} disk_util=${DISK_UTIL_CHART} io=${IO_CHART}"
 
-    if ! kubectl rollout status deployment/nginx-deployment --timeout=300s; then
-        echo "[ERROR] Run ${i} Scale Down Timed out!" | tee -a "$LOG_FILE"
-        exit 1
-    fi
+for i in $(seq 1 "${RUNS}"); do
+  echo "== [${STEP}] run_${i}/${RUNS} =="
 
-    SCALE_DOWN_END=$(date +%s%N)
-    echo "Run ${i}_SCALE_DOWN_END: $(date -d @${SCALE_DOWN_END:0:10} '+%Y-%m-%d %H:%M:%S.%N')" | tee -a "$LOG_FILE"
+  prep_scale
 
-    DURATION_DOWN=$(( (SCALE_DOWN_END - SCALE_DOWN_START) / 1000000 ))
-    echo "Run ${i}_Duration_Down(ms): $DURATION_DOWN" | tee -a "$LOG_FILE"
+  RUN_LOG="${LOG_DIR}/run_${i}.log"
+  RUN_DATA="${DATA_DIR}/run_${i}"
+  mkdir -p "${RUN_DATA}"
 
-    # 다음 런을 위한 휴식
-    echo "Cooldown for 30s..."
-    sleep 30
+  # 1) scale down 3 -> 1
+  DOWN_START_EPOCH="$(date +%s)"
+  kubectl scale deploy/"${DEPLOY}" --replicas="${REPLICAS_LOW}" >/dev/null
+  kubectl rollout status deploy/"${DEPLOY}" --timeout=300s >/dev/null
+  DOWN_END_EPOCH="$(date +%s)"
+
+  # 2) scale up 1 -> 3
+  UP_START_EPOCH="$(date +%s)"
+  kubectl scale deploy/"${DEPLOY}" --replicas="${REPLICAS_HIGH}" >/dev/null
+  kubectl rollout status deploy/"${DEPLOY}" --timeout=300s >/dev/null
+  UP_END_EPOCH="$(date +%s)"
+
+  START_EPOCH="${DOWN_START_EPOCH}"
+  READY_EPOCH="${DOWN_END_EPOCH}"   # down 완료 시각을 READY로 사용
+  END_EPOCH="${UP_END_EPOCH}"
+
+  T_down="$((DOWN_END_EPOCH - DOWN_START_EPOCH))"
+  T_up="$((UP_END_EPOCH - UP_START_EPOCH))"
+  T_total="$((END_EPOCH - START_EPOCH))"
+
+  cat > "${RUN_LOG}" <<EOL
+STEP=${STEP}
+RUN=${i}
+START_EPOCH=${START_EPOCH}
+READY_EPOCH=${READY_EPOCH}
+END_EPOCH=${END_EPOCH}
+DOWN_START_EPOCH=${DOWN_START_EPOCH}
+DOWN_END_EPOCH=${DOWN_END_EPOCH}
+UP_START_EPOCH=${UP_START_EPOCH}
+UP_END_EPOCH=${UP_END_EPOCH}
+T_down=${T_down}
+T_up=${T_up}
+T_total=${T_total}
+EOL
+
+  # Netdata export (전체 구간: DOWN_START ~ UP_END)
+  export_csv "${CPU_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_cpu.csv"
+  export_csv "${RAM_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_ram.csv"
+  export_csv "${DISK_UTIL_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/disk_util_mmcblk0.csv"
+  export_csv "${IO_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/disk_io_mmcblk0.csv"
 done
 
-echo "=== [Step 6] Experiment Finished ===" | tee -a "$LOG_FILE"
+python3 "${REPO_ROOT}/analysis/plot_step06.py" --step "${STEP}"
+echo "[DONE] ${STEP}"
