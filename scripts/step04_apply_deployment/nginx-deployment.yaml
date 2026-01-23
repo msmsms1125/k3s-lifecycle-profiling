@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-deployment
+  name: nginx
 spec:
   replicas: 3
   selector:
@@ -14,8 +14,6 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:latest
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
+        image: nginx:stable
+        ports:
+        - containerPort: 80
