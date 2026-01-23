@@ -1,0 +1,7 @@
+STEP=step10_delete_deployment
+RUN=4
+START_EPOCH=1769160141
+READY_EPOCH=
+END_EPOCH=1769160142
+T_ready=
+T_total=1
