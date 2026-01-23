@@ -1,33 +1,110 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# 설정 (경로 문제 해결)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# 프로젝트 루트: scripts/step05_deployment_idle (2단계 깊이) -> ../..
-PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-LOG_DIR="$PROJECT_ROOT/logs/redacted"
-LOG_FILE="$LOG_DIR/step05_deployment_idle.log"
+STEP="step05_deployment_idle"
+RUNS="${RUNS:-10}"
+DURATION_SEC="${DURATION_SEC:-300}"
 
-# 로그 폴더가 없으면 생성
-mkdir -p "$LOG_DIR"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+LOG_DIR="${REPO_ROOT}/logs/redacted/${STEP}"
+DATA_DIR="${REPO_ROOT}/data/netdata/${STEP}"
+RES_DIR="${REPO_ROOT}/results/${STEP}"
 
-echo "=== [Step 5] Deployment Idle (300s) Start ===" | tee "$LOG_FILE"
+NETDATA_URL="${NETDATA_URL:-http://127.0.0.1:19999}"
 
-# 1. Nginx 확인
-if ! kubectl get deployment nginx-deployment &> /dev/null; then
-    echo "[ERROR] nginx-deployment not found! Run Step 4 first." | tee -a "$LOG_FILE"
-    exit 1
-fi
+# Netdata chart IDs (이미 확인된 값)
+CPU_CHART="${CPU_CHART:-system.cpu}"
+RAM_CHART="${RAM_CHART:-system.ram}"
+DISK_UTIL_CHART="${DISK_UTIL_CHART:-disk_util.mmcblk0}"
+IO_CHART="${IO_CHART:-system.io}"
 
-# 2. 시작 시간
-START_TIME=$(date +%s%N)
-echo "IDLE_START: $(date -d @${START_TIME:0:10} '+%Y-%m-%d %H:%M:%S.%N')" | tee -a "$LOG_FILE"
+MANIFEST="${MANIFEST:-${REPO_ROOT}/scripts/step04_apply_deployment/nginx-deployment.yaml}"
+REPLICAS="${REPLICAS:-3}"
 
-# 3. 300초 대기
-echo "Waiting for 300 seconds..."
-sleep 300
+mkdir -p "${LOG_DIR}" "${DATA_DIR}" "${RES_DIR}"
 
-# 4. 종료 시간
-END_TIME=$(date +%s%N)
-echo "IDLE_END: $(date -d @${END_TIME:0:10} '+%Y-%m-%d %H:%M:%S.%N')" | tee -a "$LOG_FILE"
+require_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "missing command: $1" >&2; exit 1; }; }
+require_cmd date
+require_cmd kubectl
+require_cmd curl
+require_cmd python3
 
-echo "=== [Step 5] Finished ===" | tee -a "$LOG_FILE"
+calc_points() {
+  local after="$1" before="$2"
+  local dur=$((before - after))
+  local p=$(( (dur + 4) / 5 ))  # ceil(dur/5)
+  if (( p < 2 )); then p=2; fi
+  echo "${p}"
+}
+
+export_csv() {
+  local chart="$1" after="$2" before="$3" out="$4"
+  local points; points="$(calc_points "${after}" "${before}")"
+  curl -sS -G "${NETDATA_URL}/api/v1/data" \
+    --data-urlencode "chart=${chart}" \
+    --data-urlencode "after=${after}" \
+    --data-urlencode "before=${before}" \
+    --data-urlencode "group=average" \
+    --data-urlencode "points=${points}" \
+    --data-urlencode "format=csv" \
+    --data-urlencode "options=seconds,flip" \
+    > "${out}"
+}
+
+prep_deployment_idle() {
+  # 조건: 노드 Ready
+  kubectl wait --for=condition=Ready nodes --all --timeout=180s >/dev/null
+
+  # 조건: nginx 존재 + (가능하면) replicas=3 유지 + rollout 완료
+  if [[ -f "${MANIFEST}" ]]; then
+    kubectl apply -f "${MANIFEST}" >/dev/null
+  fi
+
+  # 이름이 nginx가 아닐 가능성까지 대비(그래도 대부분 nginx)
+  kubectl scale deployment/nginx --replicas="${REPLICAS}" >/dev/null 2>&1 || true
+
+  kubectl rollout status deployment/nginx --timeout=300s >/dev/null
+}
+
+echo "[${STEP}] RUNS=${RUNS}, DURATION_SEC=${DURATION_SEC}, REPLICAS=${REPLICAS}"
+echo "[${STEP}] MANIFEST=${MANIFEST}"
+echo "[${STEP}] CHARTS cpu=${CPU_CHART} ram=${RAM_CHART} disk_util=${DISK_UTIL_CHART} io=${IO_CHART}"
+
+for i in $(seq 1 "${RUNS}"); do
+  echo "== [${STEP}] run_${i}/${RUNS} =="
+
+  prep_deployment_idle
+
+  RUN_LOG="${LOG_DIR}/run_${i}.log"
+  RUN_DATA="${DATA_DIR}/run_${i}"
+  mkdir -p "${RUN_DATA}"
+
+  # apply 완료 후(rollout 성공 후) 300초 고정 측정
+  READY_EPOCH="$(date +%s)"
+  START_EPOCH="${READY_EPOCH}"
+  sleep "${DURATION_SEC}"
+  END_EPOCH="$(date +%s)"
+
+  T_READY=0
+  T_TOTAL="$((END_EPOCH - START_EPOCH))"
+
+  cat > "${RUN_LOG}" <<EOL
+STEP=${STEP}
+RUN=${i}
+START_EPOCH=${START_EPOCH}
+READY_EPOCH=${READY_EPOCH}
+END_EPOCH=${END_EPOCH}
+T_ready=${T_READY}
+T_total=${T_TOTAL}
+EOL
+
+  export_csv "${CPU_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_cpu.csv"
+  export_csv "${RAM_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_ram.csv"
+  export_csv "${DISK_UTIL_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/disk_util_mmcblk0.csv"
+
+  # IO는 system.io로 저장(파일명은 포맷 유지용으로 disk_io_mmcblk0.csv)
+  export_csv "${IO_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/disk_io_mmcblk0.csv"
+done
+
+python3 "${REPO_ROOT}/analysis/plot_step05.py" --step "${STEP}"
+echo "[DONE] ${STEP}"

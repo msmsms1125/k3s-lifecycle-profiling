@@ -1,0 +1,2 @@
+step,run,START_EPOCH,READY_EPOCH,END_EPOCH,T_ready,T_total,cpu_mean,cpu_peak,cpu_auc,ram_mean,ram_peak,ram_auc,disk_util_mean,disk_util_peak,disk_util_auc,disk_io_read_mean,disk_io_read_peak,disk_io_read_auc,disk_io_write_mean,disk_io_write_peak,disk_io_write_auc
+step05_deployment_idle,9,1769153611,1769153611,1769153911,0.0,300.0,8.737378895,16.9262015,2561.9314917500005,1369.3836716666665,1383.91484,404007.65615000005,1.8466666666666671,8.0,551.0,84.78666546333332,532.46342,25403.999636999997,58.27478764,221.727578,17330.0303835
