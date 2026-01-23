@@ -1,0 +1,5 @@
+STEP=step09_stop_final_idle
+RUN=1
+START_EPOCH=1769163610
+END_EPOCH=1769163673
+T_total=63
