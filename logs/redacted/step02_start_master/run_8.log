@@ -1,0 +1,20 @@
+STEP=step02_start_master
+RUN=run_8
+NETDATA_URL=http://127.0.0.1:19999
+PRE_SEC=10
+POST_SEC=30
+DISK_DEV=mmcblk0
+READY_TIMEOUT_SEC=180
+[1] stop cluster services
+[2] start master + mark START_EPOCH
+START_EPOCH=1769067965
+[3] wait master READY + mark READY_EPOCH
+READY_EPOCH=1769067977
+[4] mark END_EPOCH (= READY + POST_SEC), sleep POST window
+END_EPOCH=1769068007
+[5] export netdata csv (5s avg) from EXPORT_START..END_EPOCH
+EXPORT_START_EPOCH=1769067955
+[6] write durations + copy redacted.log into results
+T_READY_SEC=12
+T_TOTAL_SEC=42
+[done] run_8 complete

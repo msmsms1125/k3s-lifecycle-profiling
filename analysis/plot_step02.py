@@ -1,403 +1,280 @@
 #!/usr/bin/env python3
-import os
+import sys
+from pathlib import Path
 import re
-import glob
-import argparse
-from typing import Optional, Tuple, List, Dict
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 
-# -----------------------------
-# Log parsing (START/READY/END)
-# -----------------------------
 EPOCH_RE = re.compile(r'^(START_EPOCH|READY_EPOCH|END_EPOCH)=(\d+)\s*$')
 
-def parse_epochs(log_path: str) -> Dict[str, Optional[int]]:
-    out = {"START_EPOCH": None, "READY_EPOCH": None, "END_EPOCH": None}
-    if not os.path.exists(log_path):
-        return out
-    with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-        for line in f:
-            m = EPOCH_RE.match(line.strip())
-            if not m:
-                continue
-            k, v = m.group(1), int(m.group(2))
-            out[k] = v
-    return out
+def parse_epochs(log_path: Path):
+    epochs = {"START_EPOCH": None, "READY_EPOCH": None, "END_EPOCH": None}
+    if not log_path.exists():
+        return epochs
+    for line in log_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        m = EPOCH_RE.match(line.strip())
+        if m:
+            epochs[m.group(1)] = int(m.group(2))
+    return epochs
 
 
-# -----------------------------
-# Netdata CSV parsing (robust)
-# -----------------------------
-def _find_time_col(df: pd.DataFrame) -> str:
-    for c in ["time", "Time", "timestamp", "Timestamp", "datetime", "Date"]:
-        if c in df.columns:
-            return c
-    return df.columns[0]
-
-def _to_seconds_array(series: pd.Series) -> np.ndarray:
-    s_num = pd.to_numeric(series, errors="coerce")
-    if s_num.notna().mean() > 0.9:
-        x = s_num.to_numpy(dtype=float)
-        # ms -> sec heuristic
-        if np.nanmedian(x) > 1e12:
-            x = x / 1000.0
-        return x
-
-    dt = pd.to_datetime(series, errors="coerce", utc=True)
-    if dt.notna().mean() > 0.9:
-        return (dt.view("int64") / 1e9).to_numpy(dtype=float)
-
-    raise ValueError("Cannot parse time column to epoch seconds.")
-
-def load_netdata_csv(path: str) -> Tuple[np.ndarray, pd.DataFrame]:
-    df = pd.read_csv(path)
-    if df.empty:
-        raise ValueError(f"Empty CSV: {path}")
-    tcol = _find_time_col(df)
-    t = _to_seconds_array(df[tcol])
-    df2 = df.drop(columns=[tcol])
-    for c in df2.columns:
-        df2[c] = pd.to_numeric(df2[c], errors="coerce")
-    df2 = df2.dropna(axis=1, how="all")
-    return t, df2
-
-def pick_col(df: pd.DataFrame, keywords: List[str]) -> Optional[str]:
-    cols = list(df.columns)
-    lower = {c: c.lower() for c in cols}
-    for kw in keywords:
-        for c in cols:
-            if kw in lower[c]:
-                return c
-    return None
-
-def first_numeric_col(df: pd.DataFrame) -> Optional[str]:
-    for c in df.columns:
-        if pd.api.types.is_numeric_dtype(df[c]):
-            return c
-    return None
-
-
-# -----------------------------
-# Series extractors
-# -----------------------------
-def cpu_usage_percent(df: pd.DataFrame) -> pd.Series:
-    idle = pick_col(df, ["idle"])
-    if idle is not None:
-        return 100.0 - df[idle]
-    usage = pick_col(df, ["usage"])
-    if usage is not None:
-        return df[usage]
-    # sum of states fallback
-    states = [c for c in df.columns if any(k in c.lower() for k in ["user", "system", "iowait", "nice", "irq", "softirq", "steal"])]
-    if states:
-        return df[states].sum(axis=1)
-    raise ValueError("Cannot derive CPU usage from columns.")
-
-def ram_used_mib(df: pd.DataFrame) -> pd.Series:
-    used = pick_col(df, ["used"])
-    if used is None:
-        used = first_numeric_col(df)
-    if used is None:
-        raise ValueError("No numeric RAM column.")
-    s = df[used].astype(float)
-    med = np.nanmedian(s.to_numpy())
-    # bytes -> MiB
-    if med > 1e9:
-        return s / (1024.0 * 1024.0)
-    # KiB -> MiB
-    if med > 1e6:
-        return s / 1024.0
-    return s
-
-def disk_util_percent(df: pd.DataFrame) -> pd.Series:
-    util = pick_col(df, ["util", "busy"])
-    if util is None:
-        util = first_numeric_col(df)
-    if util is None:
-        raise ValueError("No numeric disk util column.")
-    return df[util].astype(float)
-
-def disk_io_kbps(df: pd.DataFrame) -> pd.Series:
-    r = pick_col(df, ["read"])
-    w = pick_col(df, ["write"])
-    if r is not None and w is not None:
-        s = df[r].astype(float) + df[w].astype(float)
+def load_df(p: Path) -> pd.DataFrame:
+    df = pd.read_csv(p)
+    if "time" not in df.columns:
+        # netdata가 time 대신 첫 컬럼으로 주는 경우 방어
+        df = df.rename(columns={df.columns[0]: "time"})
+    if pd.api.types.is_numeric_dtype(df["time"]):
+        df["dt"] = pd.to_datetime(df["time"], unit="s")
     else:
-        c = first_numeric_col(df)
-        if c is None:
-            raise ValueError("No numeric disk io column.")
-        s = df[c].astype(float)
-    med = np.nanmedian(s.to_numpy())
-    # bytes/s -> KB/s
-    if med > 1e6:
-        return s / 1024.0
-    return s
+        df["dt"] = pd.to_datetime(df["time"])
+    return df.sort_values("dt").reset_index(drop=True)
 
 
-# -----------------------------
-# Stats helpers
-# -----------------------------
-def auc_trapezoid(t_sec: np.ndarray, y: np.ndarray) -> float:
-    order = np.argsort(t_sec)
-    t = t_sec[order]
-    v = y[order]
-    mask = np.isfinite(t) & np.isfinite(v)
-    t = t[mask]
-    v = v[mask]
-    if len(t) < 2:
-        return float("nan")
-    return float(np.trapezoid(v, t))
+def auc(series: pd.Series, dt: pd.Series) -> float:
+    # numpy trapz deprecated 대응
+    t = (dt - dt.iloc[0]).dt.total_seconds().to_numpy()
+    y = series.to_numpy(dtype=float)
+    return float(np.trapezoid(y, t))
 
 
-def ensure_dir(p: str) -> None:
-    os.makedirs(p, exist_ok=True)
+def pick_cpu_total(cpu: pd.DataFrame) -> pd.Series:
+    cols = cpu.columns
+    # 1) user/system/iowait 있으면 그 합(너 step01 스타일)
+    if "user" in cols and "system" in cols:
+        iow = cpu["iowait"] if "iowait" in cols else 0
+        return cpu["user"].astype(float) + cpu["system"].astype(float) + pd.Series(iow).astype(float)
+    # 2) idle 있으면 100-idle
+    if "idle" in cols:
+        return 100.0 - cpu["idle"].astype(float)
+    # 3) 아니면 숫자 컬럼들 중 dt/time 제외하고 첫 컬럼
+    cand = [c for c in cols if c not in ("time", "dt")]
+    if not cand:
+        raise ValueError("CPU csv has no data columns")
+    return cpu[cand[0]].astype(float)
 
 
-# -----------------------------
-# Plot helpers
-# -----------------------------
-def plot_fig1_cpu_ram_disk(out_path: str, t_rel: np.ndarray, cpu: np.ndarray, ram: np.ndarray, du: np.ndarray,
-                           t_ready: Optional[float], t_end: Optional[float]) -> None:
-    plt.figure(figsize=(12, 6))
-    plt.plot(t_rel, cpu, label="CPU usage (%)")
-    plt.plot(t_rel, ram, label="RAM used (MiB)")
-    plt.plot(t_rel, du, label="Disk util (%)")
-
-    plt.axvline(0.0, linestyle="--", linewidth=1, label="START")
-    if t_ready is not None:
-        plt.axvline(t_ready, linestyle="--", linewidth=1, label="READY")
-    if t_end is not None:
-        plt.axvline(t_end, linestyle="--", linewidth=1, label="END")
-
-    plt.xlabel("Time since START (sec)  [pre window can be negative]")
-    plt.ylabel("Value")
-    plt.title("Step02 start_master: timeseries (CPU/RAM/Disk util)")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(out_path, dpi=150)
-    plt.close()
+def pick_ram_used(ram: pd.DataFrame) -> pd.Series:
+    if "used" in ram.columns:
+        return ram["used"].astype(float)
+    cols = [c for c in ram.columns if c not in ("time", "dt")]
+    if not cols:
+        raise ValueError("RAM csv has no data columns")
+    return ram[cols[0]].astype(float)
 
 
-def plot_fig1_disk_io(out_path: str, t_rel: np.ndarray, dio: np.ndarray,
-                      t_ready: Optional[float], t_end: Optional[float]) -> None:
-    plt.figure(figsize=(12, 4))
-    plt.plot(t_rel, dio, label="Disk IO (KB/s)")
-    plt.axvline(0.0, linestyle="--", linewidth=1, label="START")
-    if t_ready is not None:
-        plt.axvline(t_ready, linestyle="--", linewidth=1, label="READY")
-    if t_end is not None:
-        plt.axvline(t_end, linestyle="--", linewidth=1, label="END")
-    plt.xlabel("Time since START (sec)  [pre window can be negative]")
-    plt.ylabel("KB/s")
-    plt.title("Step02 start_master: timeseries (Disk IO)")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(out_path, dpi=150)
-    plt.close()
+def pick_disk_util(du: pd.DataFrame) -> pd.Series:
+    for c in ["utilization", "util", "busy"]:
+        if c in du.columns:
+            return du[c].astype(float)
+    cols = [c for c in du.columns if c not in ("time", "dt")]
+    if not cols:
+        raise ValueError("disk util csv has no data columns")
+    return du[cols[0]].astype(float)
 
 
-def plot_box(out_path: str, values: List[float], title: str, ylabel: str) -> None:
-    plt.figure(figsize=(7, 4))
-    plt.boxplot(values, showmeans=True, tick_labels=["runs"])
-    plt.title(title)
-    plt.ylabel(ylabel)
-    plt.tight_layout()
-    plt.savefig(out_path, dpi=150)
-    plt.close()
+def pick_reads_writes(dio: pd.DataFrame):
+    cols = dio.columns
+    # netdata disk.*는 reads/writes 또는 read/write가 나올 수 있음
+    if "reads" in cols and "writes" in cols:
+        r = dio["reads"].astype(float).abs()
+        w = dio["writes"].astype(float).abs()
+        return r, w
+    if "read" in cols and "write" in cols:
+        r = dio["read"].astype(float).abs()
+        w = dio["write"].astype(float).abs()
+        return r, w
+    # fallback: 첫 숫자 컬럼을 reads로 두고 writes=0
+    cand = [c for c in cols if c not in ("time", "dt")]
+    if not cand:
+        raise ValueError("disk io csv has no data columns")
+    r = dio[cand[0]].astype(float).abs()
+    w = pd.Series(np.zeros(len(dio)), index=dio.index)
+    return r, w
 
 
-# -----------------------------
-# Main
-# -----------------------------
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--data_root", default="data/netdata/step02_start_master")
-    ap.add_argument("--logs_root", default="logs/redacted/step02_start_master")
-    ap.add_argument("--out_root",  default="results/step02_start_master")
-    ap.add_argument("--event_only", action="store_true",
-                    help="If set, stats are computed only on [START..END]. Otherwise uses [EXPORT..END] when export has pre window.")
-    args = ap.parse_args()
+def clip_by_epochs(df: pd.DataFrame, start_epoch: int, end_epoch: int) -> pd.DataFrame:
+    # stats는 이벤트 구간(START..END)로 계산(=step02 의미에 맞게)
+    t0 = pd.to_datetime(start_epoch, unit="s")
+    t1 = pd.to_datetime(end_epoch, unit="s")
+    m = (df["dt"] >= t0) & (df["dt"] <= t1)
+    out = df.loc[m].copy()
+    # 너무 잘려서 비면 원본으로 fallback (안전)
+    return out if len(out) >= 3 else df
 
-    run_dirs = sorted(glob.glob(os.path.join(args.data_root, "run_*")))
-    if not run_dirs:
-        raise SystemExit(f"No runs found: {args.data_root}/run_*")
 
-    ensure_dir(args.out_root)
+def save_stats_csv(path: Path, d: dict):
+    df = pd.DataFrame([d])
+    df.to_csv(path, index=False)
 
-    rows = []
-    for rd in run_dirs:
-        run = os.path.basename(rd)
-        log_path = os.path.join(args.logs_root, f"{run}.log")
-        epochs = parse_epochs(log_path)
-        start = epochs["START_EPOCH"]
-        ready = epochs["READY_EPOCH"]
-        end = epochs["END_EPOCH"]
 
-        if start is None or end is None:
-            raise SystemExit(f"Missing START/END in log: {log_path}")
+def main(step_dir="data/netdata/step02_start_master",
+         log_dir="logs/redacted/step02_start_master",
+         out_dir="results/step02_start_master"):
 
-        # find disk files (device name may vary)
-        cpu_path = os.path.join(rd, "system_cpu.csv")
-        ram_path = os.path.join(rd, "system_ram.csv")
-        du_list  = glob.glob(os.path.join(rd, "disk_util_*.csv"))
-        dio_list = glob.glob(os.path.join(rd, "disk_io_*.csv"))
+    step = Path(step_dir)
+    logs = Path(log_dir)
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
 
-        if not os.path.exists(cpu_path): raise SystemExit(f"Missing: {cpu_path}")
-        if not os.path.exists(ram_path): raise SystemExit(f"Missing: {ram_path}")
-        if not du_list:  raise SystemExit(f"Missing: {rd}/disk_util_*.csv")
-        if not dio_list: raise SystemExit(f"Missing: {rd}/disk_io_*.csv")
+    run_dirs = sorted(
+        [p for p in step.iterdir() if p.is_dir() and p.name.startswith("run_")],
+        key=lambda x: int(x.name.split("_")[1])
+    )
 
-        du_path  = sorted(du_list)[0]
-        dio_path = sorted(dio_list)[0]
-        disk_dev = os.path.basename(du_path).replace("disk_util_", "").replace(".csv", "")
+    rows_summary = []
 
-        t_cpu, df_cpu = load_netdata_csv(cpu_path)
-        t_ram, df_ram = load_netdata_csv(ram_path)
-        t_du,  df_du  = load_netdata_csv(du_path)
-        t_dio, df_dio = load_netdata_csv(dio_path)
+    for run in run_dirs:
+        # 파일 찾기(디바이스명 유동)
+        cpu_p = run / "system_cpu.csv"
+        ram_p = run / "system_ram.csv"
+        du_ps = sorted(run.glob("disk_util_*.csv"))
+        dio_ps = sorted(run.glob("disk_io_*.csv"))
+        if not cpu_p.exists() or not ram_p.exists() or not du_ps or not dio_ps:
+            raise FileNotFoundError(f"missing csv in {run}")
 
-        cpu = cpu_usage_percent(df_cpu).to_numpy()
-        ram = ram_used_mib(df_ram).to_numpy()
-        du  = disk_util_percent(df_du).to_numpy()
-        dio = disk_io_kbps(df_dio).to_numpy()
+        du_p = du_ps[0]
+        dio_p = dio_ps[0]
 
-        # plotting x-axis: seconds since START (pre window negative)
-        t_rel_cpu = t_cpu - float(start)
-        t_rel_ram = t_ram - float(start)
-        t_rel_du  = t_du  - float(start)
-        t_rel_dio = t_dio - float(start)
+        cpu = load_df(cpu_p)
+        ram = load_df(ram_p)
+        du  = load_df(du_p)
+        dio = load_df(dio_p)
 
-        t_ready = float(ready - start) if ready is not None else None
-        t_end   = float(end - start)
+        cpu_total = pick_cpu_total(cpu)
+        ram_used  = pick_ram_used(ram)
+        disk_util = pick_disk_util(du)
+        reads, writes = pick_reads_writes(dio)
 
-        # per-run output folder
-        run_out = os.path.join(args.out_root, run)
-        ensure_dir(run_out)
+        # epochs
+        ep = parse_epochs(logs / f"{run.name}.log")
+        start_e = ep["START_EPOCH"]
+        ready_e = ep["READY_EPOCH"]
+        end_e   = ep["END_EPOCH"]
+        if start_e is None or end_e is None:
+            raise ValueError(f"missing START/END in log: {logs/run.name}.log")
 
-        # For a clean fig, we plot using cpu time as x, but series are different timebases.
-        # To avoid resampling complexity, we plot each with its own x in same axes by re-plotting.
-        # (matplotlib accepts different x arrays)
-        plt.figure(figsize=(12, 6))
-        plt.plot(t_rel_cpu, cpu, label="CPU usage (%)")
-        plt.plot(t_rel_ram, ram, label="RAM used (MiB)")
-        plt.plot(t_rel_du,  du,  label=f"Disk util (%) [{disk_dev}]")
-        plt.axvline(0.0, linestyle="--", linewidth=1, label="START")
-        if t_ready is not None:
-            plt.axvline(t_ready, linestyle="--", linewidth=1, label="READY")
-        plt.axvline(t_end, linestyle="--", linewidth=1, label="END")
-        plt.xlabel("Time since START (sec)  [pre window can be negative]")
-        plt.ylabel("Value")
-        plt.title(f"Step02 start_master: timeseries (CPU/RAM/Disk util) - {run}")
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(os.path.join(run_out, "fig1_timeseries_cpu_ram_disk.png"), dpi=150)
-        plt.close()
+        # stats는 START..END로 클립
+        cpu_s = clip_by_epochs(cpu, start_e, end_e)
+        ram_s = clip_by_epochs(ram, start_e, end_e)
+        du_s  = clip_by_epochs(du,  start_e, end_e)
+        dio_s = clip_by_epochs(dio, start_e, end_e)
 
-        plt.figure(figsize=(12, 4))
-        plt.plot(t_rel_dio, dio, label=f"Disk IO (KB/s) [{disk_dev}]")
-        plt.axvline(0.0, linestyle="--", linewidth=1, label="START")
-        if t_ready is not None:
-            plt.axvline(t_ready, linestyle="--", linewidth=1, label="READY")
-        plt.axvline(t_end, linestyle="--", linewidth=1, label="END")
-        plt.xlabel("Time since START (sec)  [pre window can be negative]")
-        plt.ylabel("KB/s")
-        plt.title(f"Step02 start_master: timeseries (Disk IO) - {run}")
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(os.path.join(run_out, "fig1_timeseries_disk_io.png"), dpi=150)
-        plt.close()
+        cpu_total_s = pick_cpu_total(cpu_s)
+        ram_used_s  = pick_ram_used(ram_s)
+        disk_util_s = pick_disk_util(du_s)
+        reads_s, writes_s = pick_reads_writes(dio_s)
 
-        # copy redacted log into results/run_*/redacted.log (Step01과 동일)
-        if os.path.exists(log_path):
-            with open(log_path, "rb") as src, open(os.path.join(run_out, "redacted.log"), "wb") as dst:
-                dst.write(src.read())
+        run_out = out / run.name
+        run_out.mkdir(parents=True, exist_ok=True)
 
-        # stats window
-        # 기본: export가 pre 포함이므로 "pre 포함 전체"가 되는데,
-        # 이벤트만 보고 싶으면 --event_only로 START..END만 계산
-        def clip(t, y, t0, t1):
-            m = (t >= t0) & (t <= t1)
-            return t[m], y[m]
+        # (1) fig1: CPU/RAM/Disk util 3패널 (Step01과 동일)
+        fig, ax = plt.subplots(3, 1, figsize=(11, 7), sharex=True)
+        ax[0].plot(cpu["dt"], cpu_total); ax[0].set_ylabel("CPU %")
+        ax[1].plot(ram["dt"], ram_used);  ax[1].set_ylabel("RAM used")
+        ax[2].plot(du["dt"],  disk_util); ax[2].set_ylabel("Disk util %"); ax[2].set_xlabel("time")
+        fig.suptitle(f"step02 start_master - {run.name}")
+        fig.tight_layout()
+        fig.savefig(run_out / "fig1_timeseries_cpu_ram_disk.png", dpi=200)
+        plt.close(fig)
 
-        t0 = float(start)
-        t1 = float(end)
+        # (2) fig1-io: reads/writes (Step01과 동일)
+        fig = plt.figure(figsize=(11, 4))
+        plt.plot(dio["dt"], reads, label="reads")
+        plt.plot(dio["dt"], writes, label="writes")
+        plt.xlabel("time"); plt.ylabel("KB/s (abs)"); plt.title(f"step02 start_master - {run.name} - disk IO")
+        plt.legend(); plt.tight_layout()
+        plt.savefig(run_out / "fig1_timeseries_disk_io.png", dpi=200)
+        plt.close(fig)
 
-        if args.event_only:
-            # compute stats only on [START..END]
-            tc, yc = clip(t_cpu, cpu, t0, t1)
-            tr, yr = clip(t_ram, ram, t0, t1)
-            tu, yu = clip(t_du,  du,  t0, t1)
-            ti, yi = clip(t_dio, dio, t0, t1)
-        else:
-            # include whatever is exported (usually [START-PRE .. END])
-            tc, yc = t_cpu, cpu
-            tr, yr = t_ram, ram
-            tu, yu = t_du,  du
-            ti, yi = t_dio, dio
+        # (3) plot.png: START/READY/END 라인 포함 “이벤트 시각 강조” 그림 (추가)
+        fig, ax = plt.subplots(2, 1, figsize=(11, 6), sharex=True)
+        ax[0].plot(cpu["dt"], cpu_total, label="CPU%")
+        ax[0].plot(ram["dt"], ram_used, label="RAM")
+        ax[0].plot(du["dt"],  disk_util, label="Disk util%")
+        ax[0].legend()
+        ax[0].set_ylabel("value")
+        ax[0].set_title(f"step02 start_master - {run.name} (with epochs)")
 
-        cpu_mean = float(np.nanmean(yc)); cpu_peak = float(np.nanmax(yc)); cpu_auc = auc_trapezoid(tc, yc)
-        ram_mean = float(np.nanmean(yr)); ram_peak = float(np.nanmax(yr)); ram_auc = auc_trapezoid(tr, yr)
-        du_mean  = float(np.nanmean(yu)); du_peak  = float(np.nanmax(yu)); du_auc  = auc_trapezoid(tu, yu)
-        dio_mean = float(np.nanmean(yi)); dio_peak = float(np.nanmax(yi)); dio_auc = auc_trapezoid(ti, yi)
+        ax[1].plot(dio["dt"], reads, label="reads")
+        ax[1].plot(dio["dt"], writes, label="writes")
+        ax[1].legend()
+        ax[1].set_ylabel("KB/s"); ax[1].set_xlabel("time")
 
-        t_ready_sec = float(ready - start) if ready is not None else float("nan")
-        t_total_sec = float(end - start)
+        t_start = pd.to_datetime(start_e, unit="s")
+        t_ready = pd.to_datetime(ready_e, unit="s") if ready_e is not None else None
+        t_end   = pd.to_datetime(end_e, unit="s")
 
-        rows.append({
-            "run": run,
-            "disk_dev": disk_dev,
-            "start_epoch": start,
-            "ready_epoch": ready,
-            "end_epoch": end,
+        for a in ax:
+            a.axvline(t_start, linestyle="--", linewidth=1, label="START")
+            if t_ready is not None:
+                a.axvline(t_ready, linestyle="--", linewidth=1, label="READY")
+            a.axvline(t_end, linestyle="--", linewidth=1, label="END")
+
+        fig.tight_layout()
+        fig.savefig(run_out / "plot.png", dpi=200)
+        plt.close(fig)
+
+        # (4) stats.csv: run 폴더에 1-row 저장 (추가)
+        t_ready_sec = (ready_e - start_e) if ready_e is not None else np.nan
+        t_total_sec = (end_e - start_e)
+
+        stats = {
+            "run": run.name,
+            "start_epoch": start_e,
+            "ready_epoch": ready_e,
+            "end_epoch": end_e,
             "t_ready_sec": t_ready_sec,
             "t_total_sec": t_total_sec,
-            "cpu_mean": cpu_mean,
-            "cpu_peak": cpu_peak,
-            "cpu_auc": cpu_auc,
-            "ram_mean_mib": ram_mean,
-            "ram_peak_mib": ram_peak,
-            "ram_auc_mibsec": ram_auc,
-            "disk_util_mean": du_mean,
-            "disk_util_peak": du_peak,
-            "disk_util_auc": du_auc,
-            "disk_io_mean_kbps": dio_mean,
-            "disk_io_peak_kbps": dio_peak,
-            "disk_io_auc_kb": dio_auc,
-        })
 
-    df = pd.DataFrame(rows).sort_values("run")
-    out_csv = os.path.join(args.out_root, "summary_step02.csv")
-    df.to_csv(out_csv, index=False)
-    print(f"Saved: {out_csv}")
+            "cpu_mean": float(cpu_total_s.mean()),
+            "cpu_peak": float(cpu_total_s.max()),
+            "cpu_auc":  auc(cpu_total_s, cpu_s["dt"]),
 
-    # Fig2: boxplots across runs (Step01처럼 “요약 분포”)
-    plot_box(os.path.join(args.out_root, "fig2_t_ready_box.png"),
-             df["t_ready_sec"].dropna().tolist(),
-             "T_ready distribution (start_master)", "seconds")
+            "ram_mean": float(ram_used_s.mean()),
+            "ram_peak": float(ram_used_s.max()),
+            "ram_auc":  auc(ram_used_s, ram_s["dt"]),
 
-    plot_box(os.path.join(args.out_root, "fig2_t_total_box.png"),
-             df["t_total_sec"].dropna().tolist(),
-             "T_total distribution (start_master)", "seconds")
+            "disk_util_mean": float(disk_util_s.mean()),
+            "disk_util_peak": float(disk_util_s.max()),
+            "disk_util_auc":  auc(disk_util_s, du_s["dt"]),
 
-    plot_box(os.path.join(args.out_root, "fig2_cpu_mean_box.png"),
-             df["cpu_mean"].dropna().tolist(),
-             "CPU mean distribution (start_master)", "CPU usage (%)")
+            "disk_read_mean": float(reads_s.mean()),
+            "disk_read_peak": float(reads_s.max()),
+            "disk_read_auc":  auc(reads_s, dio_s["dt"]),
 
-    plot_box(os.path.join(args.out_root, "fig2_ram_mean_box.png"),
-             df["ram_mean_mib"].dropna().tolist(),
-             "RAM mean distribution (start_master)", "RAM used (MiB)")
+            "disk_write_mean": float(writes_s.mean()),
+            "disk_write_peak": float(writes_s.max()),
+            "disk_write_auc":  auc(writes_s, dio_s["dt"]),
+        }
+        save_stats_csv(run_out / "stats.csv", stats)
 
-    plot_box(os.path.join(args.out_root, "fig2_disk_util_mean_box.png"),
-             df["disk_util_mean"].dropna().tolist(),
-             "Disk util mean distribution (start_master)", "Disk util (%)")
+        rows_summary.append(stats)
 
-    print("Saved Fig2 under:", args.out_root)
+    # step 루트 summary
+    df = pd.DataFrame(rows_summary).sort_values(
+        "run", key=lambda s: s.str.split("_").str[1].astype(int)
+    )
+    df.to_csv(out / "summary_step02.csv", index=False)
+
+    # Fig2: 분포 boxplot (각각 따로, Step01과 동일)
+    def save_box(col: str, title: str, fname: str):
+        fig = plt.figure(figsize=(7, 4))
+        plt.boxplot(df[col].dropna(), tick_labels=[col], showmeans=True)
+        plt.title(title); plt.tight_layout()
+        plt.savefig(out / fname, dpi=200)
+        plt.close(fig)
+
+    save_box("t_ready_sec", "Fig2 - T_ready distribution (step02)", "fig2_t_ready_box.png")
+    save_box("t_total_sec", "Fig2 - T_total distribution (step02)", "fig2_t_total_box.png")
+    save_box("cpu_mean", "Fig2 - CPU mean distribution (step02)", "fig2_cpu_mean_box.png")
+    save_box("ram_mean", "Fig2 - RAM used mean distribution (step02)", "fig2_ram_mean_box.png")
+    save_box("disk_util_mean", "Fig2 - Disk util mean distribution (step02)", "fig2_disk_util_mean_box.png")
+
+    print("Saved:", out / "summary_step02.csv")
+    print("Per-run:", "fig1_*.png + plot.png + stats.csv under", out / "run_*")
 
 
 if __name__ == "__main__":
-    main()
-
+    main(*sys.argv[1:])

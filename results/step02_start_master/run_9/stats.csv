@@ -1,0 +1,2 @@
+run,start_epoch,ready_epoch,end_epoch,t_ready_sec,t_total_sec,cpu_mean,cpu_peak,cpu_auc,ram_mean,ram_peak,ram_auc,disk_util_mean,disk_util_peak,disk_util_auc,disk_read_mean,disk_read_peak,disk_read_auc,disk_write_mean,disk_write_peak,disk_write_auc
+run_9,1769068010,1769068022,1769068052,12,42,32.529075763636364,74.7762688,1627.9077940000002,1196.7606554545455,1255.96094,59557.812574999996,21.10909090909091,98.0,859.0,3.4909090909090916,25.6,192.0,385.48895576363634,1250.1188,15128.595616999999
