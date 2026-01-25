@@ -1,0 +1,11 @@
+| step                     |   Mean CPU (avg of runs) |   Peak RAM (avg of runs) |   AUC Disk (avg of runs) |   T_total (avg of runs) |   n_runs |   CPU_mean_std |   RAM_peak_std |   Disk_auc_std |   T_total_std |
+|:-------------------------|-------------------------:|-------------------------:|-------------------------:|------------------------:|---------:|---------------:|---------------:|---------------:|--------------:|
+| step02_start_master      |                 32.2288  |                  1267.82 |                 736.446  |                   nan   |       10 |       3.63881  |       12.6885  |       276.295  |     nan       |
+| step03_cluster_idle      |                  8.89494 |                  1379.81 |                 766.25   |                   300   |       10 |       0.337057 |       85.4898  |       304.16   |       0       |
+| step04_apply_deployment  |                 62.817   |                  1399.9  |                 260.283  |                     6.8 |       10 |      13.2402   |       12.4595  |       378.839  |       6.51153 |
+| step05_deployment_idle   |                  9.04066 |                  1378.21 |                 870.179  |                   300   |       10 |       0.456165 |        5.84619 |       320.004  |       0       |
+| step06_scale_up_down     |                nan       |                   nan    |                 nan      |                     5.3 |       10 |     nan        |      nan       |       nan      |       1.94651 |
+| step07_rollout_restart   |                 44.8486  |                  1428.24 |                 147.704  |                     9.1 |       10 |      12.0028   |       22.8573  |       104.84   |       2.079   |
+| step08_cordon_uncordon   |                nan       |                   nan    |                 nan      |                   nan   |       10 |     nan        |      nan       |       nan      |     nan       |
+| step09_stop_final_idle   |                  8.19346 |                  1153.14 |                  97.1667 |                    63   |        1 |     nan        |      nan       |       nan      |     nan       |
+| step10_delete_deployment |                 54.068   |                  1360.74 |                  25.75   |                     1   |       10 |      25.7448   |       13.1532  |        26.8051 |       0       |
