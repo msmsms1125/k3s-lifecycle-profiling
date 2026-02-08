@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import sys
 from pathlib import Path
 import re
@@ -41,14 +40,11 @@ def auc(series: pd.Series, dt: pd.Series) -> float:
 
 def pick_cpu_total(cpu: pd.DataFrame) -> pd.Series:
     cols = cpu.columns
-    # 1) user/system/iowait 있으면 그 합(너 step01 스타일)
     if "user" in cols and "system" in cols:
         iow = cpu["iowait"] if "iowait" in cols else 0
         return cpu["user"].astype(float) + cpu["system"].astype(float) + pd.Series(iow).astype(float)
-    # 2) idle 있으면 100-idle
     if "idle" in cols:
         return 100.0 - cpu["idle"].astype(float)
-    # 3) 아니면 숫자 컬럼들 중 dt/time 제외하고 첫 컬럼
     cand = [c for c in cols if c not in ("time", "dt")]
     if not cand:
         raise ValueError("CPU csv has no data columns")
@@ -76,7 +72,6 @@ def pick_disk_util(du: pd.DataFrame) -> pd.Series:
 
 def pick_reads_writes(dio: pd.DataFrame):
     cols = dio.columns
-    # netdata disk.*는 reads/writes 또는 read/write가 나올 수 있음
     if "reads" in cols and "writes" in cols:
         r = dio["reads"].astype(float).abs()
         w = dio["writes"].astype(float).abs()
@@ -85,7 +80,6 @@ def pick_reads_writes(dio: pd.DataFrame):
         r = dio["read"].astype(float).abs()
         w = dio["write"].astype(float).abs()
         return r, w
-    # fallback: 첫 숫자 컬럼을 reads로 두고 writes=0
     cand = [c for c in cols if c not in ("time", "dt")]
     if not cand:
         raise ValueError("disk io csv has no data columns")
@@ -95,12 +89,10 @@ def pick_reads_writes(dio: pd.DataFrame):
 
 
 def clip_by_epochs(df: pd.DataFrame, start_epoch: int, end_epoch: int) -> pd.DataFrame:
-    # stats는 이벤트 구간(START..END)로 계산(=step02 의미에 맞게)
     t0 = pd.to_datetime(start_epoch, unit="s")
     t1 = pd.to_datetime(end_epoch, unit="s")
     m = (df["dt"] >= t0) & (df["dt"] <= t1)
     out = df.loc[m].copy()
-    # 너무 잘려서 비면 원본으로 fallback (안전)
     return out if len(out) >= 3 else df
 
 
@@ -126,7 +118,6 @@ def main(step_dir="data/netdata/step02_start_master",
     rows_summary = []
 
     for run in run_dirs:
-        # 파일 찾기(디바이스명 유동)
         cpu_p = run / "system_cpu.csv"
         ram_p = run / "system_ram.csv"
         du_ps = sorted(run.glob("disk_util_*.csv"))
@@ -147,7 +138,6 @@ def main(step_dir="data/netdata/step02_start_master",
         disk_util = pick_disk_util(du)
         reads, writes = pick_reads_writes(dio)
 
-        # epochs
         ep = parse_epochs(logs / f"{run.name}.log")
         start_e = ep["START_EPOCH"]
         ready_e = ep["READY_EPOCH"]
@@ -155,7 +145,6 @@ def main(step_dir="data/netdata/step02_start_master",
         if start_e is None or end_e is None:
             raise ValueError(f"missing START/END in log: {logs/run.name}.log")
 
-        # stats는 START..END로 클립
         cpu_s = clip_by_epochs(cpu, start_e, end_e)
         ram_s = clip_by_epochs(ram, start_e, end_e)
         du_s  = clip_by_epochs(du,  start_e, end_e)
@@ -169,7 +158,6 @@ def main(step_dir="data/netdata/step02_start_master",
         run_out = out / run.name
         run_out.mkdir(parents=True, exist_ok=True)
 
-        # (1) fig1: CPU/RAM/Disk util 3패널 (Step01과 동일)
         fig, ax = plt.subplots(3, 1, figsize=(11, 7), sharex=True)
         ax[0].plot(cpu["dt"], cpu_total); ax[0].set_ylabel("CPU %")
         ax[1].plot(ram["dt"], ram_used);  ax[1].set_ylabel("RAM used")
@@ -179,7 +167,6 @@ def main(step_dir="data/netdata/step02_start_master",
         fig.savefig(run_out / "fig1_timeseries_cpu_ram_disk.png", dpi=200)
         plt.close(fig)
 
-        # (2) fig1-io: reads/writes (Step01과 동일)
         fig = plt.figure(figsize=(11, 4))
         plt.plot(dio["dt"], reads, label="reads")
         plt.plot(dio["dt"], writes, label="writes")
@@ -188,7 +175,6 @@ def main(step_dir="data/netdata/step02_start_master",
         plt.savefig(run_out / "fig1_timeseries_disk_io.png", dpi=200)
         plt.close(fig)
 
-        # (3) plot.png: START/READY/END 라인 포함 “이벤트 시각 강조” 그림 (추가)
         fig, ax = plt.subplots(2, 1, figsize=(11, 6), sharex=True)
         ax[0].plot(cpu["dt"], cpu_total, label="CPU%")
         ax[0].plot(ram["dt"], ram_used, label="RAM")
@@ -216,7 +202,6 @@ def main(step_dir="data/netdata/step02_start_master",
         fig.savefig(run_out / "plot.png", dpi=200)
         plt.close(fig)
 
-        # (4) stats.csv: run 폴더에 1-row 저장 (추가)
         t_ready_sec = (ready_e - start_e) if ready_e is not None else np.nan
         t_total_sec = (end_e - start_e)
 
@@ -252,13 +237,11 @@ def main(step_dir="data/netdata/step02_start_master",
 
         rows_summary.append(stats)
 
-    # step 루트 summary
     df = pd.DataFrame(rows_summary).sort_values(
         "run", key=lambda s: s.str.split("_").str[1].astype(int)
     )
     df.to_csv(out / "summary_step02.csv", index=False)
 
-    # Fig2: 분포 boxplot (각각 따로, Step01과 동일)
     def save_box(col: str, title: str, fname: str):
         fig = plt.figure(figsize=(7, 4))
         plt.boxplot(df[col].dropna(), tick_labels=[col], showmeans=True)
