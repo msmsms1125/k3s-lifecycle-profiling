@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import sys
 from pathlib import Path
 import numpy as np
@@ -10,7 +9,6 @@ def load_df(p: Path) -> pd.DataFrame:
     if "time" not in df.columns:
         raise ValueError(f"missing time column: {p}")
 
-    # time이 문자열이면 그대로 파싱, 숫자면 epoch(s)로 파싱
     if pd.api.types.is_numeric_dtype(df["time"]):
         df["dt"] = pd.to_datetime(df["time"], unit="s")
     else:
@@ -58,7 +56,6 @@ def main(step_dir="data/netdata/step01_system_idle", out_dir="results/step01_sys
         run_out = out / run.name
         run_out.mkdir(parents=True, exist_ok=True)
 
-        # Fig1: CPU/RAM/Disk util 3패널
         fig, ax = plt.subplots(3, 1, figsize=(11, 7), sharex=True)
         ax[0].plot(cpu["dt"], cpu_total); ax[0].set_ylabel("CPU % (user+system+iowait)")
         ax[1].plot(ram["dt"], ram_used);  ax[1].set_ylabel("RAM used (MB)")
@@ -68,7 +65,6 @@ def main(step_dir="data/netdata/step01_system_idle", out_dir="results/step01_sys
         fig.savefig(run_out / "fig1_timeseries_cpu_ram_disk.png", dpi=200)
         plt.close(fig)
 
-        # Fig1-IO: reads/writes
         fig = plt.figure(figsize=(11, 4))
         plt.plot(dio["dt"], reads, label="reads")
         plt.plot(dio["dt"], writes, label="writes")
@@ -104,7 +100,6 @@ def main(step_dir="data/netdata/step01_system_idle", out_dir="results/step01_sys
     df = pd.DataFrame(rows)
     df.to_csv(out / "summary_step01.csv", index=False)
 
-    # Fig2: 분포 boxplot (각각 따로)
     def save_box(col: str, title: str, fname: str):
         fig = plt.figure(figsize=(7, 4))
         plt.boxplot(df[col].dropna(), labels=[col])
