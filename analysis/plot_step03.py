@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 from pathlib import Path
 import shutil
@@ -84,7 +83,6 @@ def main():
         t_total = end_epoch - start_epoch
         t_ready = (ready_epoch - start_epoch) if ready_epoch is not None else ""
 
-        # csv 로드 (없으면 해당 지표만 스킵)
         cpu = load_df(run / "system_cpu.csv")
         ram = load_df(run / "system_ram.csv")
 
@@ -93,13 +91,10 @@ def main():
         du  = load_df(du_path) if du_path.exists() and du_path.stat().st_size > 0 else None
         dio = load_df(dio_path) if dio_path.exists() and dio_path.stat().st_size > 0 else None
 
-        # CPU: user + system + iowait(있으면)
         cpu_total = safe_get(cpu, "user") + safe_get(cpu, "system") + safe_get(cpu, "iowait", 0.0)
 
-        # RAM: used(있으면) 아니면 첫 데이터 컬럼
         ram_used = pick_ram_used(ram)
 
-        # Disk util: utilization 컬럼 우선, 없으면 첫 데이터 컬럼
         if du is not None:
             disk_col = "utilization" if "utilization" in du.columns else [c for c in du.columns if c not in ("time","dt")][0]
             disk_util = du[disk_col].astype(float)
@@ -117,10 +112,8 @@ def main():
         run_out = out_root / run_id
         ensure_dir(run_out)
 
-        # (요구 형식) redacted.log 복사
         shutil.copy2(log_path, run_out / "redacted.log")
 
-        # (요구 형식) fig1_timeseries.png: CPU/RAM/Disk util(+IO) 한 그림 + START/READY/END 표시
         nrows = 3 + (1 if (reads is not None and writes is not None) else 0)
         fig, ax = plt.subplots(nrows, 1, figsize=(12, 3*nrows), sharex=True)
 
@@ -144,7 +137,6 @@ def main():
             ax[idx].set_ylabel("Disk IO (abs)")
             ax[idx].legend()
 
-        # epoch 라인 표시(실제 dt축에 맞춰 찍기)
         def vline_epoch(a):
             a.axvline(pd.to_datetime(start_epoch, unit="s"), linestyle="--")
             if ready_epoch is not None:
@@ -160,7 +152,6 @@ def main():
         fig.savefig(run_out / "fig1_timeseries.png", dpi=200)
         plt.close(fig)
 
-        # (요구 형식) stats.csv: mean/peak/auc + duration들
         row = {
             "step": step,
             "run": run_no,
@@ -201,11 +192,9 @@ def main():
         pd.DataFrame([row]).to_csv(run_out / "stats.csv", index=False)
         all_rows.append(row)
 
-    # step summary
     df = pd.DataFrame(all_rows).sort_values("run")
     df.to_csv(out_root / "summary.csv", index=False)
 
-    # (요구 형식) fig2_distribution.png: run 10회 이상이면 분포
     if len(df) >= 10:
         cols = [c for c in [
             "T_total",
@@ -215,7 +204,6 @@ def main():
             "disk_read_mean", "disk_write_mean",
         ] if c in df.columns]
 
-        # 숫자 변환 가능한 것만
         cols2 = []
         for c in cols:
             s = pd.to_numeric(df[c], errors="coerce")
