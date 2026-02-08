@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 from pathlib import Path
 from typing import Dict, Any, List
@@ -101,7 +100,6 @@ def main():
         run_out.mkdir(parents=True, exist_ok=True)
         (run_out / "redacted.log").write_text(logp.read_text())
 
-        # Fig1: 4줄(한 그림)
         fig, ax = plt.subplots(4, 1, figsize=(12, 8), sharex=True)
         ax[0].plot(cpu["dt"], cpu_total); ax[0].set_ylabel("CPU %")
         ax[1].plot(ram["dt"], ram_used);  ax[1].set_ylabel("RAM used (MB)")
@@ -178,7 +176,6 @@ def main():
     df = pd.DataFrame(rows).sort_values("run")
     df.to_csv(out_dir / "summary.csv", index=False)
 
-    # Fig2 (한 파일 boxplot 묶음)
     cols = ["T_total", "cpu_mean", "cpu_peak", "ram_mean", "ram_peak", "disk_util_mean", "disk_util_peak"]
     cols = [c for c in cols if c in df.columns and df[c].notna().any()]
     if cols:
