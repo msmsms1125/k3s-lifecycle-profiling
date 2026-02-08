@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 from pathlib import Path
 from typing import Optional, Dict, Any, List
@@ -111,10 +110,8 @@ def main():
         run_out = out_dir / run_name
         run_out.mkdir(parents=True, exist_ok=True)
 
-        # redacted.log 복사
         (run_out / "redacted.log").write_text(logp.read_text())
 
-        # Fig1: CPU / RAM / Disk util / IO (한 그림)
         nrows = 4
         fig, ax = plt.subplots(nrows, 1, figsize=(12, 8), sharex=True)
 
@@ -140,7 +137,6 @@ def main():
         ax[3].set_ylabel("IO (KB/s)")
         ax[3].set_xlabel("time")
 
-        # START/READY/END 표시
         for a in ax:
             vline(a, start, "START")
             if ready is not None and ready != start:
@@ -152,7 +148,6 @@ def main():
         fig.savefig(run_out / "fig1_timeseries.png", dpi=200)
         plt.close(fig)
 
-        # Stats
         row: Dict[str, Any] = {
             "step": step,
             "run": run_i,
@@ -195,15 +190,12 @@ def main():
                 "disk_io_write_mean": np.nan, "disk_io_write_peak": np.nan, "disk_io_write_auc": np.nan,
             })
 
-        # run별 stats.csv 저장
         pd.DataFrame([row]).to_csv(run_out / "stats.csv", index=False)
         rows.append(row)
 
-    # step summary.csv
     df = pd.DataFrame(rows).sort_values("run")
     df.to_csv(out_dir / "summary.csv", index=False)
 
-    # Fig2: 분포 (한 파일)
     cols = [
         ("T_total", "T_total"),
         ("cpu_mean", "cpu_mean"),
