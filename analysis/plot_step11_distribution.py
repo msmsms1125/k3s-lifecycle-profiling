@@ -20,7 +20,6 @@ def main():
         print(f"[ERR] missing {allrows}. Run make_step11_allrows.py first.")
         return
 
-    # worker -> metric -> list
     data = {}
     with allrows.open() as f:
         r = csv.DictReader(f)
