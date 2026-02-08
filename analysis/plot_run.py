@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import sys
 from pathlib import Path
 import pandas as pd
@@ -47,7 +46,6 @@ def main(run_dir: str):
         print("RAM csv has no data columns:", list(ram.columns))
         sys.exit(1)
 
-    # Optional disk
     disk_util = load_csv(util_path) if util_path.exists() else None
     disk_io   = load_csv(io_path) if io_path.exists() else None
 
@@ -60,7 +58,6 @@ def main(run_dir: str):
         "ram_col": ram_used_col,
     }
 
-    # disk util
     if disk_util is not None:
         util_col = first_data_col(disk_util)
         if util_col:
@@ -68,7 +65,6 @@ def main(run_dir: str):
             summary["disk_util_peak"] = float(disk_util[util_col].max())
             summary["disk_util_col"] = util_col
 
-    # disk io (read/write col 찾기)
     if disk_io is not None:
         data_cols = [c for c in disk_io.columns if c not in ('time','dt')]
         read_col = next((c for c in data_cols if 'read' in c.lower()), None)
@@ -87,7 +83,6 @@ def main(run_dir: str):
             summary["disk_write_peak"] = float(disk_io[write_col].max())
             summary["disk_write_col"] = write_col
 
-    # outputs (기존 방식 유지: plot.png + stats.csv)
     out_dir = Path("results") / step_name / run_path.name
     out_dir.mkdir(parents=True, exist_ok=True)
     out_png = out_dir / "plot.png"
