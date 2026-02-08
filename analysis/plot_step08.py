@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
@@ -35,7 +34,6 @@ def pick_ram_used(ram: pd.DataFrame) -> pd.Series:
 
 
 def parse_run_log(text: str) -> Dict[str, Dict[str, str]]:
-    # SEG_A/B/C 블록 파싱
     segs: Dict[str, Dict[str, str]] = {}
     cur = None
     for line in text.splitlines():
@@ -89,12 +87,10 @@ def main():
         run_name = f"run_{run_i}"
         segs = parse_run_log(logp.read_text())
 
-        # segment 폴더들
         segA = data_dir / run_name / "segA_cordon"
         segB = data_dir / run_name / "segB_pending"
         segC = data_dir / run_name / "segC_uncordon"
 
-        # Fig1은 3구간을 한 그림에 "이어붙여" 보여주자: (시간축은 실제 dt 기준이라 자연스럽게 분리됨)
         fig, ax = plt.subplots(4, 1, figsize=(12, 9), sharex=True)
 
         def plot_one(seg_key: str, seg_dir: Path, start: int, ready: str, end: int, tag: str):
@@ -118,7 +114,6 @@ def main():
                     vline(a, int(ready), f"{tag}_READY")
                 vline(a, end,   f"{tag}_END")
 
-            # stats (segment별)
             return {
                 f"{tag}_START_EPOCH": start,
                 f"{tag}_READY_EPOCH": ready,
@@ -147,7 +142,6 @@ def main():
                 f"{tag}_io_write_auc":  auc(writes, dio["dt"]) if writes is not None else np.nan,
             }
 
-        # seg별 epoch 로드
         def get_epoch(seg_key: str, field: str) -> str:
             return segs.get(seg_key, {}).get(field, "")
 
@@ -193,7 +187,6 @@ def main():
     df = pd.DataFrame(rows).sort_values("run")
     df.to_csv(out_dir / "summary.csv", index=False)
 
-    # Fig2 distribution (대표 지표 몇 개)
     cols = [c for c in df.columns if c.endswith("_T_total") or c.endswith("_cpu_mean") or c.endswith("_ram_mean")]
     cols = [c for c in cols if df[c].notna().any()]
     if cols:
