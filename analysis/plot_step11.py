@@ -108,7 +108,6 @@ def main():
                 "loss_pct": ping["loss_pct"],
             })
 
-        # stats.csv
         stats_path = out_dir / "stats.csv"
         with stats_path.open("w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=[
@@ -119,7 +118,6 @@ def main():
             for r in rows:
                 w.writerow(r)
 
-        # fig1_network.png
         plt.figure(figsize=(12, 7))
 
         ax1 = plt.subplot(2, 1, 1)
@@ -146,7 +144,6 @@ def main():
         plt.savefig(out_dir / "fig1_network.png", dpi=200)
         plt.close()
 
-        # copy redacted.log (if exists)
         redacted_src = Path("logs/redacted") / STEP / f"run_{run_idx}.log"
         if redacted_src.exists():
             (out_dir / "redacted.log").write_text(redacted_src.read_text(errors="ignore"), errors="ignore")
