@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 from pathlib import Path
 from typing import Dict, Any, Optional, List
@@ -105,7 +104,6 @@ def main():
             reads = dio["reads"].astype(float).abs()
             writes = dio["writes"].astype(float).abs()
 
-        # down/up window cut
         cpu_down = cut_window(pd.DataFrame({"dt": cpu["dt"], "v": cpu_total}), ds, de)
         cpu_up   = cut_window(pd.DataFrame({"dt": cpu["dt"], "v": cpu_total}), us, ue)
 
@@ -131,7 +129,6 @@ def main():
         run_out.mkdir(parents=True, exist_ok=True)
         (run_out / "redacted.log").write_text(logp.read_text())
 
-        # Fig1 (전체)
         fig, ax = plt.subplots(4, 1, figsize=(12, 8), sharex=True)
         ax[0].plot(cpu["dt"], cpu_total); ax[0].set_ylabel("CPU %")
         ax[1].plot(ram["dt"], ram_used);  ax[1].set_ylabel("RAM used (MB)")
@@ -201,7 +198,6 @@ def main():
     df = pd.DataFrame(rows).sort_values("run")
     df.to_csv(out_dir / "summary.csv", index=False)
 
-    # Fig2 distribution (한 파일)
     fig_cols = [
         ("T_down", "T_down"),
         ("T_up", "T_up"),
