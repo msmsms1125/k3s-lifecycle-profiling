@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 from pathlib import Path
 import numpy as np
@@ -73,14 +72,12 @@ def main():
         ram_used  = pick_ram_used(ram)
         disk_util = du["utilization"].astype(float) if "utilization" in du.columns else du[[c for c in du.columns if c not in ("time","dt")][0]].astype(float)
 
-        # system.io: reads/writes (이름 고정이라 안정적)
         reads  = dio["reads"].astype(float).abs() if "reads" in dio.columns else None
         writes = dio["writes"].astype(float).abs() if "writes" in dio.columns else None
 
         run_out = out_dir / run_name
         run_out.mkdir(parents=True, exist_ok=True)
 
-        # Fig1: 한 그림에 CPU/RAM/Disk util(+IO) + START/END 표시
         fig, ax = plt.subplots(4, 1, figsize=(12, 9), sharex=True)
         ax[0].plot(cpu["dt"], cpu_total); ax[0].set_ylabel("CPU %")
         ax[1].plot(ram["dt"], ram_used);  ax[1].set_ylabel("RAM used (MB)")
