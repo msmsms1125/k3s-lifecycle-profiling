@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from typing import Optional
 import argparse
 from pathlib import Path
@@ -63,7 +62,6 @@ def main(step: str):
         run_out = out_dir / run_id
         run_out.mkdir(parents=True, exist_ok=True)
 
-        # log
         log_path = log_dir / f"{run_id}.log"
         meta = read_kv_log(log_path)
         start_epoch = int(meta["START_EPOCH"])
@@ -76,7 +74,6 @@ def main(step: str):
         end_dt = pd.to_datetime(end_epoch, unit="s")
         ready_dt = pd.to_datetime(ready_epoch, unit="s") if ready_epoch else None
 
-        # csv
         cpu = load_df(run / "system_cpu.csv")
         ram = load_df(run / "system_ram.csv")
         du  = load_df(run / "disk_util_mmcblk0.csv") if (run / "disk_util_mmcblk0.csv").exists() and (run / "disk_util_mmcblk0.csv").stat().st_size > 0 else None
@@ -91,14 +88,12 @@ def main(step: str):
 
         io_read = io_write = None
         if dio is not None:
-            # 어떤 컬럼명이든 있으면 첫 2개를 read/write로 취급(없으면 스킵)
             cols = [c for c in dio.columns if c not in ("time", "dt")]
             if len(cols) >= 1:
                 io_read = dio[cols[0]].astype(float).abs()
             if len(cols) >= 2:
                 io_write = dio[cols[1]].astype(float).abs()
 
-        # ---- fig1 (one figure) ----
         panels = 3 + (1 if (io_read is not None or io_write is not None) else 0)
         fig, ax = plt.subplots(panels, 1, figsize=(12, 8), sharex=True)
 
@@ -131,7 +126,6 @@ def main(step: str):
         fig.savefig(run_out / "fig1_timeseries.png", dpi=200)
         plt.close(fig)
 
-        # ---- stats row ----
         row = {
             "step": step_name,
             "run": i,
@@ -177,7 +171,6 @@ def main(step: str):
         else:
             row.update({"disk_io_write_mean": np.nan, "disk_io_write_peak": np.nan, "disk_io_write_auc": np.nan})
 
-        # per-run stats.csv + redacted.log copy
         pd.DataFrame([row]).to_csv(run_out / "stats.csv", index=False)
         (run_out / "redacted.log").write_text(log_path.read_text())
 
@@ -186,7 +179,6 @@ def main(step: str):
     df = pd.DataFrame(rows).sort_values("run")
     df.to_csv(out_dir / "summary.csv", index=False)
 
-    # fig2_distribution (>=10 runs)
     if len(df) >= 10:
         cols = [c for c in ["T_total", "cpu_mean", "cpu_peak", "cpu_auc", "ram_mean", "disk_util_mean"] if c in df.columns]
         fig = plt.figure(figsize=(12, 7))
