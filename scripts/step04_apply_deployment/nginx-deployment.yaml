@@ -1,3 +1,5 @@
+# - step04_apply_deployment에서 사용하는 nginx Deployment manifest
+# - replicas=3 nginx:stable Pod를 생성하여 rollout(READY) 시점 측정에 사용
 apiVersion: apps/v1
 kind: Deployment
 metadata:
