@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 set -euo pipefail
 
 STEP="step03_cluster_idle"
@@ -20,7 +19,6 @@ require_cmd python3
 require_cmd kubectl
 require_cmd curl
 
-# Step03 조건: nginx 없음 + nodes Ready
 prep_cluster_idle() {
   kubectl delete deployment nginx --ignore-not-found >/dev/null 2>&1 || true
   if [[ -f "${REPO_ROOT}/scripts/step04_apply_deployment/nginx-deployment.yaml" ]]; then
@@ -29,7 +27,6 @@ prep_cluster_idle() {
   kubectl wait --for=condition=Ready nodes --all --timeout=120s >/dev/null
 }
 
-# Netdata charts 자동 탐지 (mmcblk0 환경 대응)
 CHART_JSON="$(curl -s "${NETDATA_URL}/api/v1/charts")"
 CPU_CHART="system.cpu"
 RAM_CHART="system.ram"
@@ -52,7 +49,7 @@ print(cand[0] if cand else "")
 PY
 <<<"${CHART_JSON}")"
 
-# 5초 평균으로 뽑기 위한 points 계산
+# 5초 평균
 calc_points() {
   local after="$1" before="$2"
   local dur=$((before - after))
@@ -102,11 +99,10 @@ END_EPOCH=${END_EPOCH}
 T_total=${T_TOTAL}
 EOF
 
-  # CPU/RAM은 고정
   export_csv "${CPU_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_cpu.csv"
   export_csv "${RAM_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_ram.csv"
 
-  # Disk는 발견되면 저장, 못 찾으면 스킵(파이썬에서 해당 지표만 비움 처리)
+  # Disk는 발견되면 저장, 못 찾으면 스킵
   if [[ -n "${DISK_UTIL_CHART}" ]]; then
     export_csv "${DISK_UTIL_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/disk_util_mmcblk0.csv"
   fi
@@ -115,8 +111,6 @@ EOF
   fi
 done
 
-# 파이썬 1번만 실행: run별 결과 + step fig2까지 전부 생성
 python3 "${REPO_ROOT}/analysis/plot_step03.py" --step "${STEP}"
 
 echo "[DONE] ${STEP}"
-
