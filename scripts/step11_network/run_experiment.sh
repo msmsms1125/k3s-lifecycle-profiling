@@ -1,17 +1,38 @@
-#!/usr/bin/env bash
+# - step11_network: master ↔ worker 간 네트워크 지연(ping)과 대역폭(iperf3) 측정
+# - 각 run은 WORKERS 목록을 순회하며 (ping → iperf3 → cooldown) 을 수행, 결과 파일로 저장
+#
+# Artifacts (per run):
+# - logs/redacted/step11_network/run_<RUN_IDX>.log
+#     STEP/RUN_IDX/START_EPOCH/END_EPOCH/T_total
+#     PING_COUNT/PING_INTERVAL/IPERF_DURATION/IPERF_STREAMS/COOLDOWN
+#     MASTER_HOST/MASTER_TIME_UTC + WORKERS 목록 기록
+# - data/network/step11_network/run_<RUN_IDX>/
+#     ping_master_to_<name>.txt
+#     iperf_master_to_<name>_tcp.json
+#
+# Env variables / Params:
+# - RUN_IDX: 첫 번째 인자($1)로 받는 run index (필수)
+# - PING_COUNT     : ping 패킷 수 (default: 20)
+# - PING_INTERVAL  : ping 간격 초 (default: 0.2)
+# - IPERF_DURATION : iperf3 측정 시간 초 (default: 10)
+# - IPERF_STREAMS  : iperf3 parallel streams(-P) (default: 1)
+# - COOLDOWN       : 각 worker 측정 후 cooldown 초 (default: 30)
+# - WORKERS        : "name ip" 배열 (각 worker는 iperf3 서버 떠있기)
+#
+# Epoch definition:
+# - START_EPOCH : run 시작 시각 (WORKERS 순회 전)
+# - END_EPOCH   : 모든 worker 측정 완료 후 시각
+# - T_total     : END_EPOCH - START_EPOCH
 set -euo pipefail
 
-# ===== Fixed params (from spec) =====
 PING_COUNT=20
 PING_INTERVAL=0.2
 IPERF_DURATION=10
 IPERF_STREAMS=1
 COOLDOWN=30
 
-# ===== Step name (no "benchmark") =====
 STEP_NAME="step11_network"
 
-# ===== Workers =====
 # format: "name ip"
 WORKERS=(
   "pi03 100.70.165.30"
