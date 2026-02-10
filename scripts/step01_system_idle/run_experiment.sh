@@ -1,4 +1,3 @@
-# What:
 # - step01_system_idle: K3s(및 워커의 k3s-agent)를 중지한 상태에서 일정 시간(DURATION_SEC) 동안 시스템 idle baseline 측정
 #
 # Artifacts (per run):
