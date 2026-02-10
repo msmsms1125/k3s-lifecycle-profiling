@@ -1,3 +1,31 @@
+# - step04_apply_deployment: nginx Deployment를 apply하고, rollout 완료(READY)까지의 시간과 그 구간의 자원 사용 패턴 측정
+# - 각 run마다 kubectl apply → rollout status 완료 시점을 기준으로 START/READY/END epoch를 기록, Netdata CSV 수집
+#
+# Artifacts (per run):
+# - logs/redacted/step04_apply_deployment/run_<i>.log
+#     STEP/RUN/START_EPOCH/READY_EPOCH/END_EPOCH 및 T_ready/T_total 기록
+# - data/netdata/step04_apply_deployment/run_<i>/
+#     system_cpu.csv
+#     system_ram.csv
+#     disk_util_mmcblk0.csv
+#     disk_io_mmcblk0.csv (가능한 IO chart를 자동 탐색해 저장)
+# - results/step04_apply_deployment/
+#     (plot_step04.py가 생성하는 산출물: fig/stats 등)
+#
+# Env variables:
+# - RUNS      : 반복 횟수 (default: 10)
+# - NETDATA_URL : Netdata base URL (default: http://127.0.0.1:19999)
+# - (내부 상수/경로)
+#   - MANIFEST : scripts/step04_apply_deployment/nginx-deployment.yaml
+#   - DISK_DEV : mmcblk0 기준 chart를 사용
+#
+# Epoch definition:
+# - START_EPOCH : kubectl apply -f MANIFEST 직전 timestamp
+# - READY_EPOCH : kubectl rollout status deployment/nginx 완료 직후 timestamp
+# - END_EPOCH   : READY_EPOCH (본 step에서는 END=READY로 정의)
+# - T_ready  = READY_EPOCH - START_EPOCH
+# - T_total  = END_EPOCH - START_EPOCH (즉, T_total == T_ready)
+# - export_csv는 [START_EPOCH, END_EPOCH] 구간을 Netdata API로 5초 평균(group=average, points=ceil(dur/5))으로 export
 set -euo pipefail
 
 STEP="step04_apply_deployment"
