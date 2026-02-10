@@ -3,7 +3,7 @@
 --- Phase 1: Cordon Worker ---
 CORDON_START: 2026-01-21 22:46:10.000000000
 CORDON_END: 2026-01-21 22:46:11.000000000
-Worker node 'yhgwpi' is now cordoned.
+Worker node '[MASTER_NODE]' is now cordoned.
 
 --- Phase 2: Scale Up to 3 (Expect Pending) ---
 SCALE_START: 2026-01-21 22:47:11.000000000
