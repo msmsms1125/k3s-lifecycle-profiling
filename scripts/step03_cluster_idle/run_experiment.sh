@@ -1,3 +1,28 @@
+# - step03_cluster_idle: 워크로드가 없는 cluster idle 상태를 DURATION_SEC 동안 유지하며 baseline 자원 사용 패턴을 측정
+# - 각 run마다 START_EPOCH~END_EPOCH 구간의 Netdata CSV를 수집하고, step 단위로 plot_step03.py 실행
+
+# Artifacts:
+# - logs/redacted/step03_cluster_idle/run_<i>.log
+#     STEP/RUN/START_EPOCH/END_EPOCH/T_total 기록
+# - data/netdata/step03_cluster_idle/run_<i>/
+#     system_cpu.csv
+#     system_ram.csv
+#     disk_util_mmcblk0.csv (차트가 발견된 경우)
+#     disk_io_mmcblk0.csv   (차트가 발견된 경우)
+# - results/step03_cluster_idle/
+#     (plot_step03.py가 생성하는 산출물: fig/stats 등)
+
+# Env variables:
+# - RUNS         : 반복 횟수 (default: 10)
+# - DURATION_SEC : 관찰 윈도우 길이 (default: 300)
+# - NETDATA_URL  : Netdata base URL (default: http://127.0.0.1:19999)
+# - (내부적으로 REPO_ROOT 기준으로 LOG_DIR/DATA_DIR/RES_DIR 경로 생성)
+
+# Epoch definition:
+# - START_EPOCH = date +%s (측정 시작 시각, seconds since epoch)
+# - END_EPOCH   = date +%s (sleep DURATION_SEC 이후 측정 종료 시각)
+# - T_total     = END_EPOCH - START_EPOCH
+# - export_csv [START_EPOCH, END_EPOCH] 구간 Netdata API로 5초 평균(group=average, points=ceil(dur/5)) export
 set -euo pipefail
 
 STEP="step03_cluster_idle"
