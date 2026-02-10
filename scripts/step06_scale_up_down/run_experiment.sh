@@ -1,3 +1,45 @@
+# - step06_scale_up_down: 특정 Deployment(기본 nginx)를 scale down(3→1) 후 scale up(1→3),
+#   각 구간의 duration과 전체 구간의 자원 사용 패턴 측정
+# - 1 run = (down 구간) + (up 구간) 연속 수행이며, Netdata CSV는 DOWN_START..UP_END 전체 구간으로 export
+#
+# Artifacts (per run):
+# - logs/redacted/step06_scale_up_down/run_<i>.log
+#     START_EPOCH/READY_EPOCH/END_EPOCH
+#     DOWN_START_EPOCH/DOWN_END_EPOCH, UP_START_EPOCH/UP_END_EPOCH
+#     T_down/T_up/T_total 기록
+# - data/netdata/step06_scale_up_down/run_<i>/
+#     system_cpu.csv
+#     system_ram.csv
+#     disk_util_mmcblk0.csv
+#     disk_io_mmcblk0.csv
+# - results/step06_scale_up_down/
+#     (analysis/plot_step06.py가 생성하는 산출물: fig/stats 등)
+#
+# Env variables:
+# - RUNS          : 반복 횟수 (default: 10)
+# - DEPLOY        : 대상 deployment 이름 (default: nginx)
+# - REPLICAS_HIGH : scale up 목표 replicas (default: 3)
+# - REPLICAS_LOW  : scale down 목표 replicas (default: 1)
+# - NETDATA_URL   : Netdata base URL (default: http://127.0.0.1:19999)
+# - CPU_CHART     : CPU chart id (default: system.cpu)
+# - RAM_CHART     : RAM chart id (default: system.ram)
+# - DISK_UTIL_CHART : Disk util chart id (default: disk_util.mmcblk0)
+# - IO_CHART      : IO chart id (default: system.io)
+# - MANIFEST      : DEPLOY가 없을 때 apply할 manifest 경로
+#                  (default: scripts/step04_apply_deployment/nginx-deployment.yaml)
+#
+# Epoch definition:
+# - DOWN_START_EPOCH : scale down 명령 직전 timestamp
+# - DOWN_END_EPOCH   : scale down rollout 완료 직후 timestamp
+# - UP_START_EPOCH   : scale up 명령 직전 timestamp
+# - UP_END_EPOCH     : scale up rollout 완료 직후 timestamp
+# - START_EPOCH = DOWN_START_EPOCH
+# - READY_EPOCH = DOWN_END_EPOCH (본 step에서는 "down 완료"를 READY로 기록)
+# - END_EPOCH   = UP_END_EPOCH
+# - T_down  = DOWN_END_EPOCH - DOWN_START_EPOCH
+# - T_up    = UP_END_EPOCH   - UP_START_EPOCH
+# - T_total = END_EPOCH - START_EPOCH
+# - export_csv는 [START_EPOCH, END_EPOCH] 전체 구간을 Netdata API로 5초 평균(group=average, points=ceil(dur/5))으로 export
 set -euo pipefail
 
 STEP="step06_scale_up_down"
