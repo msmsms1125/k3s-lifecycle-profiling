@@ -1,3 +1,26 @@
+# What:
+# - step01_system_idle: K3s(및 워커의 k3s-agent)를 중지한 상태에서 일정 시간(DURATION_SEC) 동안 시스템 idle baseline 측정
+#
+# Artifacts (per run):
+# - logs/redacted/step01_system_idle/run_<i>.log
+#   - STEP/RUN/NETDATA_URL/DURATION_SEC
+#   - START_EPOCH / END_EPOCH
+# - data/netdata/step01_system_idle/run_<i>/
+#   - system_cpu.csv
+#   - system_ram.csv
+# - results/step01_system_idle/run_<i>/
+#   - redacted.log
+#
+# Env vars:
+# - RUNS         : 반복 횟수 (default: 3)
+# - DURATION_SEC : 관찰 윈도우 길이 (default: 300)
+# - WORKER_HOST  : 워커 노드 SSH 호스트(옵션). 설정 시 원격에서 k3s-agent 중지 시도
+# - NETDATA_URL  : Netdata base URL (default: http://127.0.0.1:19999)
+#
+# Epoch definition:
+# - START_EPOCH = date +%s (측정 시작 시각, seconds since epoch)
+# - END_EPOCH   = START_EPOCH + DURATION_SEC (측정 종료 시각)
+# - export_csv는 [START_EPOCH, END_EPOCH] 구간 Netdata CSV export
 set -euo pipefail
 
 RUNS="${RUNS:-3}"
