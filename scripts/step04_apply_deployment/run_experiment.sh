@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 set -euo pipefail
 
 STEP="step04_apply_deployment"
@@ -20,7 +19,6 @@ require_cmd python3
 require_cmd kubectl
 require_cmd curl
 
-# ---------- helpers ----------
 calc_points() {
   local after="$1" before="$2"
   local dur=$((before - after))
@@ -42,7 +40,6 @@ export_csv() {
     --data-urlencode "options=seconds,flip" \
     > "${out}" || true
 
-  # netdata가 "No metrics..."를 주면 파일 비움 처리
   if head -n 1 "${out}" 2>/dev/null | grep -q "No metrics where matched"; then
     : > "${out}"
   fi
@@ -51,7 +48,6 @@ export_csv() {
 cleanup_nginx() {
   kubectl delete -f "${MANIFEST}" --ignore-not-found >/dev/null 2>&1 || true
   kubectl delete deployment nginx --ignore-not-found >/dev/null 2>&1 || true
-  # rollout 중이던 리소스가 남아있을 수 있어 잠깐 정리 대기
   kubectl wait --for=delete deployment/nginx --timeout=120s >/dev/null 2>&1 || true
 }
 
@@ -64,11 +60,9 @@ prep_apply() {
   fi
 }
 
-# disk util은 이미 검증된 차트명으로 고정
 CPU_CHART="system.cpu"
 RAM_CHART="system.ram"
 DISK_UTIL_CHART="disk_util.mmcblk0"
-# IO는 환경마다 없을 수 있어서 후보를 돌려보고 성공하는 것만 사용
 IO_CANDIDATES=("disk.io.mmcblk0" "disk_io.mmcblk0" "disk.io_mmcblk0")
 
 pick_io_chart() {
@@ -100,7 +94,6 @@ for i in $(seq 1 "${RUNS}"); do
   START_EPOCH="$(date +%s)"
   kubectl apply -f "${MANIFEST}" >/dev/null
 
-  # rollout 완료까지가 측정 구간
   kubectl rollout status deployment/nginx --timeout=600s >/dev/null
   READY_EPOCH="$(date +%s)"
   END_EPOCH="${READY_EPOCH}"
@@ -118,7 +111,6 @@ T_ready=${T_READY}
 T_total=${T_TOTAL}
 EOF2
 
-  # netdata export (epoch로 정확히 절단)
   export_csv "${CPU_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_cpu.csv"
   export_csv "${RAM_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_ram.csv"
   export_csv "${DISK_UTIL_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/disk_util_mmcblk0.csv"
@@ -131,7 +123,6 @@ EOF2
     echo "[${STEP}] run_${i}: IO_CHART=<not found> (skip)"
   fi
 
-  # 다음 run을 위해 nginx 제거(조건: nginx 없음 유지)
   cleanup_nginx
 done
 
