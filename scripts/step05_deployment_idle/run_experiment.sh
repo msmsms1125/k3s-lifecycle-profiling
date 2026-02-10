@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 set -euo pipefail
 
 STEP="step05_deployment_idle"
@@ -12,7 +11,6 @@ RES_DIR="${REPO_ROOT}/results/${STEP}"
 
 NETDATA_URL="${NETDATA_URL:-http://127.0.0.1:19999}"
 
-# Netdata chart IDs (이미 확인된 값)
 CPU_CHART="${CPU_CHART:-system.cpu}"
 RAM_CHART="${RAM_CHART:-system.ram}"
 DISK_UTIL_CHART="${DISK_UTIL_CHART:-disk_util.mmcblk0}"
@@ -52,15 +50,14 @@ export_csv() {
 }
 
 prep_deployment_idle() {
-  # 조건: 노드 Ready
+  # 노드 Ready
   kubectl wait --for=condition=Ready nodes --all --timeout=180s >/dev/null
 
-  # 조건: nginx 존재 + (가능하면) replicas=3 유지 + rollout 완료
+  # nginx 존재 + replicas=3 유지 + rollout 완료
   if [[ -f "${MANIFEST}" ]]; then
     kubectl apply -f "${MANIFEST}" >/dev/null
   fi
 
-  # 이름이 nginx가 아닐 가능성까지 대비(그래도 대부분 nginx)
   kubectl scale deployment/nginx --replicas="${REPLICAS}" >/dev/null 2>&1 || true
 
   kubectl rollout status deployment/nginx --timeout=300s >/dev/null
@@ -79,7 +76,6 @@ for i in $(seq 1 "${RUNS}"); do
   RUN_DATA="${DATA_DIR}/run_${i}"
   mkdir -p "${RUN_DATA}"
 
-  # apply 완료 후(rollout 성공 후) 300초 고정 측정
   READY_EPOCH="$(date +%s)"
   START_EPOCH="${READY_EPOCH}"
   sleep "${DURATION_SEC}"
@@ -102,7 +98,6 @@ EOL
   export_csv "${RAM_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/system_ram.csv"
   export_csv "${DISK_UTIL_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/disk_util_mmcblk0.csv"
 
-  # IO는 system.io로 저장(파일명은 포맷 유지용으로 disk_io_mmcblk0.csv)
   export_csv "${IO_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${RUN_DATA}/disk_io_mmcblk0.csv"
 done
 
