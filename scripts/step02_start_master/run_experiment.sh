@@ -1,24 +1,17 @@
-#!/usr/bin/env bash
 set -euo pipefail
 
-# 반복 횟수 / pre/post window
 RUNS="${RUNS:-10}"
-PRE_SEC="${PRE_SEC:-10}"        # start 직전 baseline 구간(초)
-POST_SEC="${POST_SEC:-30}"      # ready 이후 tail 구간(초)
+PRE_SEC="${PRE_SEC:-10}"
+POST_SEC="${POST_SEC:-30}"
 
-# (선택) 워커 끌 때만 설정
-WORKER_HOST="${WORKER_HOST:-}"  # 예: yhsensorpi@100.xx.xx.xx
+WORKER_HOST="${WORKER_HOST:-}"
 
-# netdata endpoint
 NETDATA_URL="${NETDATA_URL:-http://127.0.0.1:19999}"
 
-# 디스크 디바이스(환경마다 다름)
-DISK_DEV="${DISK_DEV:-mmcblk0}" # 예: sda, nvme0n1, vda ...
+DISK_DEV="${DISK_DEV:-mmcblk0}"
 
-# ready 대기 타임아웃
 READY_TIMEOUT_SEC="${READY_TIMEOUT_SEC:-180}"
 
-# repo root 기준으로 경로 고정 (어디서 실행해도 안전)
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "${ROOT_DIR}/scripts/utils/netdata_export.sh"
 
@@ -41,10 +34,7 @@ wait_master_ready() {
       continue
     fi
 
-    # kubectl 가능한지 + node Ready 확인
-    # (k3s 환경에 따라 kubectl 권한 이슈가 있어서 sudo k3s kubectl로 안전하게)
     if sudo k3s kubectl get nodes --no-headers >/dev/null 2>&1; then
-      # Ready 상태 라인 확인 (master 1노드면 보통 1줄)
       if sudo k3s kubectl get nodes --no-headers 2>/dev/null | grep -q ' Ready '; then
         return 0
       fi
@@ -59,7 +49,6 @@ wait_master_ready() {
 for i in $(seq 1 "$RUNS"); do
   echo "=== [$step] run_${i} / $RUNS ==="
 
-  # run 디렉토리 (Step01과 동일 구조)
   run_dir_data="${ROOT_DIR}/data/netdata/${step}/run_${i}"
   run_dir_res="${ROOT_DIR}/results/${step}/run_${i}"
   run_log="${ROOT_DIR}/logs/redacted/${step}/run_${i}.log"
@@ -100,7 +89,6 @@ for i in $(seq 1 "$RUNS"); do
   echo "END_EPOCH=${END_EPOCH}" | tee -a "$run_log"
   sleep "$POST_SEC"
 
-  # export 구간: START 이전 PRE_SEC 포함(베이스라인)
   EXPORT_START="$(( START_EPOCH - PRE_SEC ))"
   if (( EXPORT_START < 0 )); then EXPORT_START=0; fi
 
@@ -120,4 +108,3 @@ for i in $(seq 1 "$RUNS"); do
   echo "[done] run_${i} complete" | tee -a "$run_log"
   echo
 done
-
