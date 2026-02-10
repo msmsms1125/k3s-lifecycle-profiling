@@ -1,14 +1,60 @@
-#!/usr/bin/env bash
+# - step08_cordon_uncordon: 특정 worker 노드를 cordon/uncordon 하여 스케줄링을 제한/해제,
+#   그 과정에서 발생하는 Pending/Running 전이와 자원 사용 패턴 측정
+# - 1 run은 3개 세그먼트로 구성
+#   - Seg A: cordon 이벤트 전후 WINDOW_SEC 관찰
+#   - Seg B: replicas=3로 scale 후 Pending 관찰 (최대 PENDING_TIMEOUT)
+#   - Seg C: uncordon 후 Pending들이 Running으로 전이되는 구간 관찰
+#
+# Artifacts (per run):
+# - logs/redacted/step08_cordon_uncordon/run_<i>.log
+#     segment별 START_EPOCH/READY_EPOCH/END_EPOCH 및 T_total 기록
+# - data/netdata/step08_cordon_uncordon/run_<i>/
+#     segA_cordon/  (A_AFTER..A_BEFORE 윈도우)
+#       system_cpu.csv, system_ram.csv, disk_util_mmcblk0.csv, disk_io_mmcblk0.csv
+#     segB_pending/ (B_START..B_END)
+#       system_cpu.csv, system_ram.csv, disk_util_mmcblk0.csv, disk_io_mmcblk0.csv
+#     segC_uncordon/ (C_START..C_END)
+#       system_cpu.csv, system_ram.csv, disk_util_mmcblk0.csv, disk_io_mmcblk0.csv
+# - results/step08_cordon_uncordon/
+#     (analysis/plot_step08.py가 생성하는 산출물: fig/stats 등)
+#
+# Env variables:
+# - RUNS            : 반복 횟수 (default: 10)
+# - WORKER          : cordon/uncordon 대상 worker 노드명 (default: yhsensorpi)
+# - DEPLOY          : 대상 deployment 이름 (default: nginx)
+# - WINDOW_SEC      : cordon 전후 관찰 window 길이 (default: 60)
+# - PENDING_TIMEOUT : Pending/Running 전이 관찰 최대 시간 (default: 300)
+# - NETDATA_URL     : Netdata base URL (default: http://127.0.0.1:19999)
+# - CPU_CHART       : CPU chart id (default: system.cpu)
+# - RAM_CHART       : RAM chart id (default: system.ram)
+# - DISK_UTIL_CHART : Disk util chart id (default: disk_util.mmcblk0)
+# - IO_CHART        : IO chart id (default: system.io)
+# - MANIFEST        : DEPLOY가 없을 때 apply할 manifest 경로
+#                    (default: scripts/step04_apply_deployment/nginx-deployment.yaml)
+#
+# Epoch definition:
+# - Segment A (cordon window)
+#   - START_EPOCH = A_START (cordon 직전)
+#   - END_EPOCH   = A_END   (cordon 직후)
+#   - export range = [A_START-WINDOW_SEC, A_END+WINDOW_SEC]
+# - Segment B (pending observation)
+#   - START_EPOCH = B_START (scale --replicas=3 실행 시각)
+#   - READY_EPOCH = B_READY (Pending이 "처음" 관찰된 시각; 없으면 빈칸)
+#   - END_EPOCH   = B_END   (Running >= 3 도달 시각; 아니면 timeout 시각)
+# - Segment C (uncordon transition)
+#   - START_EPOCH = C_START (uncordon 실행 시각)
+#   - END_EPOCH   = C_END   (Running >= 3 도달 시각; 아니면 timeout 시각)
+# - T_total은 각 segment에서 (END_EPOCH - START_EPOCH)로 기록
 set -euo pipefail
 
 STEP="step08_cordon_uncordon"
 RUNS="${RUNS:-10}"
 
-WORKER="${WORKER:-yhsensorpi}"   # 워커 노드 이름 바꾸면 여기
+WORKER="${WORKER:-yhsensorpi}"
 DEPLOY="${DEPLOY:-nginx}"
 
-WINDOW_SEC="${WINDOW_SEC:-60}"          # cordon 전후 관찰
-PENDING_TIMEOUT="${PENDING_TIMEOUT:-300}" # pending 관찰 최대 시간
+WINDOW_SEC="${WINDOW_SEC:-60}"
+PENDING_TIMEOUT="${PENDING_TIMEOUT:-300}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG_DIR="${REPO_ROOT}/logs/redacted/${STEP}"
@@ -69,7 +115,6 @@ wait_all_running_replicas() {
   return 1
 }
 
-# 준비: 노드 Ready, nginx 존재/롤아웃 정상, replicas=1로 시작(원하면 1로 고정)
 prep() {
   kubectl wait --for=condition=Ready nodes --all --timeout=180s >/dev/null
   if ! kubectl get deploy/"${DEPLOY}" >/dev/null 2>&1; then
@@ -106,12 +151,11 @@ for i in $(seq 1 "${RUNS}"); do
   export_csv "${DISK_UTIL_CHART}" "${A_AFTER}" "${A_BEFORE}" "${RUN_DATA}/segA_cordon/disk_util_mmcblk0.csv"
   export_csv "${IO_CHART}" "${A_AFTER}" "${A_BEFORE}" "${RUN_DATA}/segA_cordon/disk_io_mmcblk0.csv"
 
-  ######## Segment B: deploy/scale=3 시도 → pending 관찰 ########
+  ######## Segment B: deploy/scale=3 시도 -> pending 관찰 ########
   # start = scale 실행 시각
   B_START="$(date +%s)"
   kubectl scale deploy/"${DEPLOY}" --replicas=3 >/dev/null
 
-  # READY_EPOCH = Pending이 처음 관찰된 시각(없으면 빈칸)
   B_READY=""
   end_deadline=$((B_START + PENDING_TIMEOUT))
   while (( $(date +%s) < end_deadline )); do
@@ -122,7 +166,6 @@ for i in $(seq 1 "${RUNS}"); do
     sleep 1
   done
 
-  # END_EPOCH = 모두 Running(>=3) 되는 시각(안되면 timeout 시각)
   if wait_all_running_replicas 3 "${PENDING_TIMEOUT}"; then
     B_END="$(date +%s)"
   else
@@ -135,7 +178,7 @@ for i in $(seq 1 "${RUNS}"); do
   export_csv "${DISK_UTIL_CHART}" "${B_START}" "${B_END}" "${RUN_DATA}/segB_pending/disk_util_mmcblk0.csv"
   export_csv "${IO_CHART}" "${B_START}" "${B_END}" "${RUN_DATA}/segB_pending/disk_io_mmcblk0.csv"
 
-  ######## Segment C: uncordon → pending들이 Running ########
+  ######## Segment C: uncordon → pending Running ########
   C_START="$(date +%s)"
   kubectl uncordon "${WORKER}" >/dev/null
 
@@ -151,8 +194,6 @@ for i in $(seq 1 "${RUNS}"); do
   export_csv "${DISK_UTIL_CHART}" "${C_START}" "${C_END}" "${RUN_DATA}/segC_uncordon/disk_util_mmcblk0.csv"
   export_csv "${IO_CHART}" "${C_START}" "${C_END}" "${RUN_DATA}/segC_uncordon/disk_io_mmcblk0.csv"
 
-  ######## run log (네 포맷: START/READY/END + T_ready/T_total) ########
-  # Step08은 구간 3개라서, 로그에 segment별로 찍어주자(파이썬이 summary로 합침)
   cat > "${RUN_LOG}" <<EOL
 STEP=${STEP}
 RUN=${i}
