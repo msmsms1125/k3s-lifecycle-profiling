@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 set -euo pipefail
 
 STEP="step06_scale_up_down"
@@ -54,12 +53,10 @@ export_csv() {
 prep_scale() {
   kubectl wait --for=condition=Ready nodes --all --timeout=180s >/dev/null
 
-  # deployment 보장(없으면 apply)
   if ! kubectl get deploy/"${DEPLOY}" >/dev/null 2>&1; then
     [[ -f "${MANIFEST}" ]] && kubectl apply -f "${MANIFEST}" >/dev/null
   fi
 
-  # 시작 상태를 replicas=3으로 맞춤(최대한)
   kubectl scale deploy/"${DEPLOY}" --replicas="${REPLICAS_HIGH}" >/dev/null 2>&1 || true
   kubectl rollout status deploy/"${DEPLOY}" --timeout=300s >/dev/null
 }
@@ -89,7 +86,7 @@ for i in $(seq 1 "${RUNS}"); do
   UP_END_EPOCH="$(date +%s)"
 
   START_EPOCH="${DOWN_START_EPOCH}"
-  READY_EPOCH="${DOWN_END_EPOCH}"   # down 완료 시각을 READY로 사용
+  READY_EPOCH="${DOWN_END_EPOCH}"
   END_EPOCH="${UP_END_EPOCH}"
 
   T_down="$((DOWN_END_EPOCH - DOWN_START_EPOCH))"
