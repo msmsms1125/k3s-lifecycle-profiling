@@ -1,3 +1,36 @@
+# - step05_deployment_idle: nginx Deployment가 이미 존재하고 Ready/rollout 완료된 상태를 유지,
+#   DURATION_SEC 동안 "deployment idle baseline" 자원 사용 패턴을 측정
+# - 매 run마다 READY 시점을 START로 두고(READY_EPOCH==START_EPOCH), 관찰 윈도우 동안 Netdata CSV 수집
+#
+# Artifacts (per run):
+# - logs/redacted/step05_deployment_idle/run_<i>.log
+#     STEP/RUN/START_EPOCH/READY_EPOCH/END_EPOCH 및 T_ready/T_total 기록
+# - data/netdata/step05_deployment_idle/run_<i>/
+#     system_cpu.csv
+#     system_ram.csv
+#     disk_util_mmcblk0.csv
+#     disk_io_mmcblk0.csv   (IO_CHART로 export; 파일명은 disk_io_mmcblk0.csv로 저장)
+# - results/step05_deployment_idle/
+#     (analysis/plot_step05.py가 생성하는 산출물: fig/stats 등)
+#
+# Env variables:
+# - RUNS         : 반복 횟수 (default: 10)
+# - DURATION_SEC : 관찰 윈도우 길이 (default: 300)
+# - NETDATA_URL  : Netdata base URL (default: http://127.0.0.1:19999)
+# - CPU_CHART    : CPU chart id (default: system.cpu)
+# - RAM_CHART    : RAM chart id (default: system.ram)
+# - DISK_UTIL_CHART : Disk util chart id (default: disk_util.mmcblk0)
+# - IO_CHART     : IO chart id (default: system.io)
+# - MANIFEST     : nginx manifest 경로 (default: scripts/step04_apply_deployment/nginx-deployment.yaml)
+# - REPLICAS     : nginx replica 수 유지값 (default: 3)
+#
+# Epoch definition:
+# - READY_EPOCH : nginx rollout 완료(ready) 상태를 확인/정렬한 직후 timestamp
+# - START_EPOCH : READY_EPOCH와 동일 (T_ready=0으로 정의)
+# - END_EPOCH   : START_EPOCH + DURATION_SEC 관찰 후 timestamp
+# - T_ready = 0
+# - T_total = END_EPOCH - START_EPOCH
+# - export_csv는 [START_EPOCH, END_EPOCH] 구간을 Netdata API로 5초 평균(group=average, points=ceil(dur/5))으로 export
 set -euo pipefail
 
 STEP="step05_deployment_idle"
