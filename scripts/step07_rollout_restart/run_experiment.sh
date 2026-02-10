@@ -1,4 +1,34 @@
-#!/usr/bin/env bash
+# - step07_rollout_restart: 대상 Deployment(기본 nginx)에 대해 kubectl rollout restart 수행
+#   restart 완료(rollout status 종료)까지의 duration과 그 구간의 자원 사용 패턴 측정
+# - 각 run마다 START_EPOCH..END_EPOCH 구간을 기준으로 Netdata CSV 수집
+#
+# Artifacts (per run):
+# - logs/redacted/step07_rollout_restart/run_<i>.log
+#     STEP/RUN/START_EPOCH/END_EPOCH/T_total 기록
+# - data/netdata/step07_rollout_restart/run_<i>/
+#     system_cpu.csv
+#     system_ram.csv
+#     disk_util_mmcblk0.csv
+#     disk_io_mmcblk0.csv
+# - results/step07_rollout_restart/
+#     (analysis/plot_step07.py가 생성하는 산출물: fig/stats 등)
+#
+# Env variables:
+# - RUNS          : 반복 횟수 (default: 10)
+# - DEPLOY        : 대상 deployment 이름 (default: nginx)
+# - NETDATA_URL   : Netdata base URL (default: http://127.0.0.1:19999)
+# - CPU_CHART     : CPU chart id (default: system.cpu)
+# - RAM_CHART     : RAM chart id (default: system.ram)
+# - DISK_UTIL_CHART : Disk util chart id (default: disk_util.mmcblk0)
+# - IO_CHART      : IO chart id (default: system.io)
+# - MANIFEST      : DEPLOY가 없을 때 apply할 manifest 경로
+#                  (default: scripts/step04_apply_deployment/nginx-deployment.yaml)
+#
+# Epoch definition:
+# - START_EPOCH : `kubectl rollout restart deploy/$DEPLOY` 실행 직전 timestamp
+# - END_EPOCH   : `kubectl rollout status deploy/$DEPLOY` 완료 직후 timestamp
+# - T_total     : END_EPOCH - START_EPOCH
+# - export_csv  : [START_EPOCH, END_EPOCH] 구간을 Netdata API로 5초 평균(group=average, points=ceil(dur/5))으로 export
 set -euo pipefail
 
 STEP="step07_rollout_restart"
