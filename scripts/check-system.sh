@@ -1,4 +1,15 @@
-#!/bin/bash
+# - 시스템 환경(OS/Kernel/CPU/Memory/Disk/Network)과 주요 소프트웨어(k3s/kubectl/containerd/netdata) 상태 출력 점검 스크립트
+# - 성능 측정용 run 스크립트 아님. 실험 환경 스냅샷/검증 목적
+#
+# Artifacts:
+# - stdout로만 출력
+#
+# Env variables:
+# - (없음)
+#
+# Epoch definition:
+# - (해당 없음) START/READY/END epoch 기록 안 함
+# ============================================================
 echo "==================================="
 echo "    System Information Check"
 echo "==================================="
