@@ -1,3 +1,31 @@
+# - step02_start_master 실험 스크립트
+# - K3s master 시작 과정에서 lifecycle timing 및 자원 사용 패턴을 측정
+# - START → READY → END 구간을 기준으로 netdata metric을 수집
+# Artifacts (per run):
+# - logs/redacted/step02_start_master/run_<i>.log
+#     START_EPOCH / READY_EPOCH / END_EPOCH / duration 기록
+# - data/netdata/step02_start_master/run_<i>/
+#     system_cpu.csv
+#     system_ram.csv
+#     disk_util_<dev>.csv
+#     disk_io_<dev>.csv
+# - results/step02_start_master/run_<i>/
+#     redacted.log (git 최소 산출물)
+
+# Env variables:
+# - RUNS              : 반복 횟수 (default: 10)
+# - PRE_SEC           : START 이전 관찰 window (default: 10)
+# - POST_SEC          : READY 이후 관찰 window (default: 30)
+# - WORKER_HOST       : worker SSH host (옵션)
+# - NETDATA_URL       : Netdata base URL (default: http://127.0.0.1:19999)
+# - DISK_DEV          : disk metric 대상 device (default: mmcblk0)
+# - READY_TIMEOUT_SEC : master READY 대기 timeout (default: 180)
+
+# Epoch definition:
+# - START_EPOCH : k3s master start 직전 timestamp
+# - READY_EPOCH : kubectl get nodes 상태 Ready 감지 시점
+# - END_EPOCH   : READY_EPOCH + POST_SEC
+# - EXPORT_START = START_EPOCH - PRE_SEC
 set -euo pipefail
 
 RUNS="${RUNS:-10}"
