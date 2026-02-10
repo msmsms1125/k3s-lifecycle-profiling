@@ -1,4 +1,30 @@
-#!/usr/bin/env bash
+# - step09_stop_final_idle: k3s 서비스를 실제로 stop -> stop 직후 WINDOW_SEC 동안의 리소스 하강/정리 구간 관찰
+# - Step09는 클러스터를 내리는 작업 -> 기본 (RUNS=1)로 설정
+#
+# Artifacts (per run):
+# - logs/redacted/step09_stop_final_idle/run_<i>.log
+#     STEP/RUN/START_EPOCH/END_EPOCH/T_total 기록
+# - data/netdata/step09_stop_final_idle/run_<i>/
+#     system_cpu.csv
+#     system_ram.csv
+#     disk_util_mmcblk0.csv (DISK_UTIL_CHART가 유효할 때)
+#     disk_io_mmcblk0.csv   (IO_CHART가 유효할 때)
+# - results/step09_stop_final_idle/
+#     (analysis/plot_step09.py가 생성하는 산출물: fig/stats 등)
+#
+# Env variables:
+# - RUNS          : 반복 횟수 (default: 1)
+# - WINDOW_SEC    : k3s stop 직후 관찰 window 길이 (default: 60)
+# - NETDATA_URL   : Netdata base URL (default: http://127.0.0.1:19999)
+# - DISK_UTIL_CHART : Disk util chart id (default: disk_util.mmcblk0)
+# - IO_CHART      : Disk IO chart id (default: system.io)
+# - CPU_CHART=system.cpu, RAM_CHART=system.ram
+#
+# Epoch definition:
+# - START_EPOCH : `sudo systemctl stop k3s` 실행 시각 (stop 명령 시점)
+# - END_EPOCH   : stop 이후 WINDOW_SEC 관찰이 끝난 시각
+# - T_total     : END_EPOCH - START_EPOCH
+# - export_csv  : [START_EPOCH, END_EPOCH] 구간을 Netdata API로 5초 평균(group=average, points=ceil(dur/5))으로 export
 set -euo pipefail
 
 STEP="step09_stop_final_idle"
