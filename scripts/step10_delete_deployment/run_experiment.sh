@@ -1,4 +1,33 @@
-#!/usr/bin/env bash
+# - step10_delete_deployment: nginx Deployment를 delete -> 실제로 리소스가 사라질 때까지의 시간 비용과 자원 사용 패턴 측정
+# - 각 run마다 nginx 존재를 보장(없으면 manifest apply)한 뒤 delete를 수행, delete 완료 시점까지 Netdata CSV 수집
+#
+# Artifacts (per run):
+# - logs/redacted/step10_delete_deployment/run_<i>.log
+#     STEP/RUN/START_EPOCH/END_EPOCH/T_total 기록 (READY_EPOCH/T_ready는 사용하지 않음)
+# - data/netdata/step10_delete_deployment/run_<i>/
+#     system_cpu.csv
+#     system_ram.csv
+#     disk_util_mmcblk0.csv
+#     disk_io_mmcblk0.csv
+# - results/step10_delete_deployment/
+#     (analysis/plot_step10.py가 생성하는 산출물: fig/stats 등)
+#
+# Env variables:
+# - RUNS          : 반복 횟수 (default: 10)
+# - TIMEOUT_SEC   : delete 완료 대기(폴링) timeout (default: 180)
+# - NETDATA_URL   : Netdata base URL (default: http://127.0.0.1:19999)
+# - CPU_CHART     : CPU chart id (default: system.cpu)
+# - RAM_CHART     : RAM chart id (default: system.ram)
+# - DISK_UTIL_CHART : Disk util chart id (default: disk_util.mmcblk0)
+# - IO_CHART      : Disk IO chart id (default: system.io)
+# - MANIFEST      : nginx가 없을 때 apply할 manifest 경로
+#                  (default: scripts/step04_apply_deployment/nginx-deployment.yaml)
+#
+# Epoch definition:
+# - START_EPOCH : `kubectl delete deployment nginx` 실행 직전 timestamp
+# - END_EPOCH   : `kubectl get deploy nginx`가 실패(=deployment 없음)하는 첫 시각 (wait_deleted 반환값)
+# - T_total     : END_EPOCH - START_EPOCH
+# - export_csv  : [START_EPOCH, END_EPOCH] 구간을 Netdata API로 5초 평균(group=average, points=ceil(dur/5))으로 export
 set -euo pipefail
 
 STEP="step10_delete_deployment"
