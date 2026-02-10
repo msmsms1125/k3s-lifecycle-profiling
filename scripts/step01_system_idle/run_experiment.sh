@@ -1,10 +1,8 @@
-#!/usr/bin/env bash
 set -euo pipefail
 
-# ---- config ----
 RUNS="${RUNS:-3}"
-DURATION_SEC="${DURATION_SEC:-300}"     # system idle 측정 300s
-WORKER_HOST="${WORKER_HOST:-}"          # 예: yhsensorpi@100.xx.xx.xx  (없으면 skip)
+DURATION_SEC="${DURATION_SEC:-300}"
+WORKER_HOST="${WORKER_HOST:-}"
 NETDATA_URL="${NETDATA_URL:-http://127.0.0.1:19999}"
 
 source scripts/utils/netdata_export.sh
@@ -21,7 +19,6 @@ stop_cluster() {
 for i in $(seq 1 "$RUNS"); do
   echo "=== [$step] run_$i / $RUNS ==="
 
-  # fixed paths (overwrite mode)
   run_dir_data="data/netdata/${step}/run_${i}"
   run_dir_res="results/${step}/run_${i}"
   run_log="logs/redacted/${step}/run_${i}.log"
@@ -55,9 +52,6 @@ for i in $(seq 1 "$RUNS"); do
   export_csv "system.ram" "$START_EPOCH" "$END_EPOCH" "${run_dir_data}/system_ram.csv" || {
     echo "WARN: failed to export system.ram" | tee -a "$run_log"
   }
-
-  # (선택) disk chart는 환경마다 이름이 달라서, 있으면 추가로 뽑는 방식 추천
-  # export_csv "system.io" ...  또는 "disk.*" 계열 확인 후 추가
 
   echo "[5] copy redacted.log into results (git minimum set)" | tee -a "$run_log"
   cp -f "$run_log" "${run_dir_res}/redacted.log"
