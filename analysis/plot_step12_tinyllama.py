@@ -6,6 +6,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.gridspec import GridSpec
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 STEP = "step12_apply_tinyllama_http"
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -29,7 +31,11 @@ def _read_csv_with_time(csv_path):
     if not os.path.exists(csv_path):
         return None, None
 
-    df = pd.read_csv(csv_path, comment="#")
+    try:
+        df = pd.read_csv(csv_path, comment="#")
+    except pd.errors.EmptyDataError:
+        return None, None
+
     df.columns = [c.strip().strip('"') for c in df.columns]
     time_col = df.columns[0]
 
@@ -43,6 +49,8 @@ def _read_csv_with_time(csv_path):
     df = df.dropna(subset=[time_col])
     if df.empty:
         return None, None
+
+    df = df.sort_values(by=time_col)
 
     t = df[time_col].values.astype(float)
 
@@ -137,9 +145,29 @@ def safe_stat(t, v):
         return np.nan, np.nan, np.nan
     try:
         auc = float(np.trapz(v, t)) if (len(t) == len(v) and len(t) > 1) else np.nan
+        auc = abs(auc)
     except Exception:
         auc = np.nan
     return float(np.nanmean(v)), float(np.nanmax(v)), auc
+
+
+def align_time(t, start_epoch):
+    """
+    [FIX 2] Timezone Correction
+    If the CSV timestamps (t) are wildly different from START_EPOCH (e.g. > 1 hour),
+    calculate the offset (rounded to nearest hour) and shift t to align.
+    """
+    if t is None or len(t) == 0:
+        return t
+    
+    diff = t[0] - float(start_epoch)
+    if abs(diff) > 3000:
+        # Round to nearest hour (3600s)
+        hours_off = round(diff / 3600.0)
+        offset = hours_off * 3600.0
+        print(f"    [INFO] Detected timezone offset {hours_off}h ({offset}s). Aligning data.")
+        return t - offset
+    return t
 
 
 def plot_run(run_id):
@@ -162,6 +190,11 @@ def plot_run(run_id):
     t_ram, v_ram = load_ram(os.path.join(data_dir, "system_ram.csv"))
     t_disk, v_disk = load_disk(os.path.join(data_dir, "disk_util_mmcblk0.csv"))
     t_net, v_rx, v_tx = load_net(os.path.join(data_dir, "net_eth0.csv"))
+
+    t_cpu = align_time(t_cpu, start)
+    t_ram = align_time(t_ram, start)
+    t_disk = align_time(t_disk, start)
+    t_net = align_time(t_net, start)
 
     def rel(epoch):
         return (epoch - start) if epoch is not None else None
@@ -187,13 +220,16 @@ def plot_run(run_id):
         ax.set_ylabel(ylabel, fontsize=9)
         if t is not None and v is not None and len(t) > 0 and len(v) > 0:
             x = t - float(start)
-            mask = (x >= 0) & (x <= (end - start))
+            mask = (x >= -5) & (x <= (end - start + 5))
             x2 = x[mask]
             v2 = v[mask]
             if len(x2) > 0 and len(v2) > 0:
                 ax.plot(x2, v2, color=color, linewidth=1.2)
                 top = float(np.nanmax(v2)) if not np.all(np.isnan(v2)) else 1.0
                 add_markers(ax, markers, top)
+            else:
+                print(f"    [DEBUG] Empty plot for {ylabel}. t range: {t[0]-start:.1f} to {t[-1]-start:.1f}")
+
         ax.set_xlim(0, end - start)
         ax.grid(True, alpha=0.3)
         ax.tick_params(labelsize=8)
@@ -204,7 +240,7 @@ def plot_run(run_id):
 
     if t_net is not None and v_rx is not None and v_tx is not None and len(t_net) > 0:
         x = t_net - float(start)
-        mask = (x >= 0) & (x <= (end - start))
+        mask = (x >= -5) & (x <= (end - start + 5))
         x2 = x[mask]
         rx_kb = (v_rx / 1000.0)[mask]
         tx_kb = (v_tx / 1000.0)[mask]
@@ -220,6 +256,8 @@ def plot_run(run_id):
             if tx_kb.size > 0 and not np.all(np.isnan(tx_kb)):
                 top = max(top, float(np.nanmax(tx_kb)))
             add_markers(ax_net, markers, top)
+        else:
+             print(f"    [DEBUG] Empty plot for Network. t range: {t_net[0]-start:.1f} to {t_net[-1]-start:.1f}")
 
     ax_net.set_xlim(0, end - start)
     ax_net.grid(True, alpha=0.3)
