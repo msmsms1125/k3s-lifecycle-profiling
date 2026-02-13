@@ -1,2 +1,2 @@
 run,T_ready,T_total,cpu_mean,cpu_peak,cpu_auc,ram_mean,ram_peak,ram_auc,disk_mean,disk_peak,disk_auc,net_rx_peak_kbps,net_tx_peak_kbps
-5,15,300,,,,,,,,,,,
+5,15,300,15.244866758100558,78.826528,-5445.272300750001,1279.535033519553,1318.8008,-456792.5557,4.893854748603352,100.0,-1751.0,0.0,0.0009338574
