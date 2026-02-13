@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinyllama-server
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinyllama
+  template:
+    metadata:
+      labels:
+        app: tinyllama
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - tinyllama
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: tinyllama
+          image: docker.io/library/llama-cpp-cpu:v1
+          imagePullPolicy: Never
+          command:
+            - python3
+            - -m
+            - llama_cpp.server
+            - --model
+            - /models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "8080"
+            - --n_ctx
+            - "512"
+            - --n_threads
+            - "4"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: model-storage
+              mountPath: /models
+          resources:
+            requests:
+              memory: "1500Mi"
+              cpu: "1000m"
+            limits:
+              memory: "3000Mi"
+              cpu: "4000m"
+          readinessProbe:
+            httpGet:
+              path: /v1/models
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
+      volumes:
+        - name: model-storage
+          hostPath:
+            path: /data/models
+            type: Directory

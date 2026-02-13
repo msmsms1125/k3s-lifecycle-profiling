@@ -1,0 +1,19 @@
+[INFO] STEP=step12_apply_tinyllama_http RUN=3
+START_EPOCH=1770911051
+deployment.apps/tinyllama-http created
+service/tinyllama-http-svc created
+[INFO] waiting for pod creation...
+POD_NAME=tinyllama-http-fdcd64d87-fh2mb
+NODE_NAME=raspberrypi-pi03
+NODE_IP=192.168.50.166
+[INFO] probing readiness by HTTP 200...
+READY_EPOCH=1770911054
+T_ready=3
+LOAD_START=1770911054
+[INFO] sending load: 1 RPS for 10s
+LOAD_END=1770911229
+END_EPOCH=1770911351
+T_total=300
+service "tinyllama-http-svc" deleted from default namespace
+deployment.apps "tinyllama-http" deleted from default namespace
+[DONE] step12_apply_tinyllama_http run_3
