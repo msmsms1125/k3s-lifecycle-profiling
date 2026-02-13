@@ -1,0 +1,111 @@
+========================================
+STEP: step12_apply_tinyllama_http
+RUNS: 10
+START: 2026-02-13 12:26:31
+========================================
+
+--- RUN 1/10 START: 2026-02-13 12:26:31 ---
+START_EPOCH=1770953202
+START_HUMAN=2026-02-13 12:26:42
+deployment.apps/tinyllama-server created
+service/tinyllama-service created
+ERROR: Pod did not become ready within 300s
+END_EPOCH=1770953549
+--- RUN 1/10 END: 2026-02-13 12:32:29 ---
+
+--- RUN 2/10 START: 2026-02-13 12:32:59 ---
+START_EPOCH=1770953590
+START_HUMAN=2026-02-13 12:33:10
+deployment.apps/tinyllama-server created
+service/tinyllama-service created
+ERROR: Pod did not become ready within 300s
+END_EPOCH=1770953938
+--- RUN 2/10 END: 2026-02-13 12:38:58 ---
+
+--- RUN 3/10 START: 2026-02-13 12:39:29 ---
+START_EPOCH=1770953980
+START_HUMAN=2026-02-13 12:39:40
+deployment.apps/tinyllama-server created
+service/tinyllama-service created
+ERROR: Pod did not become ready within 300s
+END_EPOCH=1770954327
+--- RUN 3/10 END: 2026-02-13 12:45:27 ---
+
+--- RUN 4/10 START: 2026-02-13 12:45:58 ---
+START_EPOCH=1770954368
+START_HUMAN=2026-02-13 12:46:08
+deployment.apps/tinyllama-server created
+service/tinyllama-service created
+ERROR: Pod did not become ready within 300s
+END_EPOCH=1770954715
+--- RUN 4/10 END: 2026-02-13 12:51:55 ---
+
+--- RUN 5/10 START: 2026-02-13 12:52:26 ---
+START_EPOCH=1770954756
+START_HUMAN=2026-02-13 12:52:36
+deployment.apps/tinyllama-server created
+service/tinyllama-service created
+ERROR: Pod did not become ready within 300s
+END_EPOCH=1770955102
+--- RUN 5/10 END: 2026-02-13 12:58:22 ---
+
+--- RUN 6/10 START: 2026-02-13 12:58:53 ---
+START_EPOCH=1770955144
+START_HUMAN=2026-02-13 12:59:04
+deployment.apps/tinyllama-server created
+service/tinyllama-service created
+ERROR: Pod did not become ready within 300s
+END_EPOCH=1770955490
+--- RUN 6/10 END: 2026-02-13 13:04:50 ---
+
+--- RUN 7/10 START: 2026-02-13 13:05:21 ---
+START_EPOCH=1770955532
+START_HUMAN=2026-02-13 13:05:32
+deployment.apps/tinyllama-server created
+service/tinyllama-service created
+ERROR: Pod did not become ready within 300s
+END_EPOCH=1770955879
+--- RUN 7/10 END: 2026-02-13 13:11:19 ---
+
+--- RUN 8/10 START: 2026-02-13 13:11:50 ---
+START_EPOCH=1770955921
+START_HUMAN=2026-02-13 13:12:01
+deployment.apps/tinyllama-server created
+service/tinyllama-service created
+ERROR: Pod did not become ready within 300s
+END_EPOCH=1770956267
+--- RUN 8/10 END: 2026-02-13 13:17:47 ---
+
+--- RUN 9/10 START: 2026-02-13 13:18:18 ---
+START_EPOCH=1770956309
+START_HUMAN=2026-02-13 13:18:29
+deployment.apps/tinyllama-server created
+service/tinyllama-service created
+ERROR: Pod did not become ready within 300s
+END_EPOCH=1770956655
+--- RUN 9/10 END: 2026-02-13 13:24:15 ---
+
+--- RUN 10/10 START: 2026-02-13 13:24:46 ---
+START_EPOCH=1770956697
+START_HUMAN=2026-02-13 13:24:57
+deployment.apps/tinyllama-server created
+service/tinyllama-service created
+ERROR: Pod did not become ready within 300s
+END_EPOCH=1770957043
+--- RUN 10/10 END: 2026-02-13 13:30:43 ---
+
+========================================
+ALL RUNS COMPLETE: 2026-02-13 13:30:44
+========================================
+
+=== T_ready summary ===
+run_1: T_ready=s T_total=s
+run_2: T_ready=s T_total=s
+run_3: T_ready=s T_total=s
+run_4: T_ready=s T_total=s
+run_5: T_ready=s T_total=s
+run_6: T_ready=s T_total=s
+run_7: T_ready=s T_total=s
+run_8: T_ready=s T_total=s
+run_9: T_ready=s T_total=s
+run_10: T_ready=s T_total=s

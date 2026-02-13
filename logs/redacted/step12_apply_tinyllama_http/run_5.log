@@ -1,19 +1,5 @@
-[INFO] STEP=step12_apply_tinyllama_http RUN=5
-START_EPOCH=1770912153
-deployment.apps/tinyllama-http created
-service/tinyllama-http-svc created
-[INFO] waiting for pod creation...
-POD_NAME=tinyllama-http-fdcd64d87-8xvdq
-NODE_NAME=yhsensorpi
-NODE_IP=192.168.50.162
-[INFO] probing readiness by HTTP 200...
-READY_EPOCH=1770912168
-T_ready=15
-LOAD_START=1770912168
-[INFO] sending load: 1 RPS for 10s
-LOAD_END=1770912341
-END_EPOCH=1770912453
-T_total=300
-service "tinyllama-http-svc" deleted from default namespace
-deployment.apps "tinyllama-http" deleted from default namespace
-[DONE] step12_apply_tinyllama_http run_5
+START_EPOCH=1770965517
+READY_EPOCH=1770965863
+LOAD_START_EPOCH=1770965863
+LOAD_END_EPOCH=1770965874
+END_EPOCH=1770965874
