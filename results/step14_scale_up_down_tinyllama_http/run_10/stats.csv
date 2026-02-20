@@ -1,0 +1,2 @@
+run,T_scale_up,T_scale_down,T_total,cpu_mean,cpu_peak,cpu_auc,ram_mean,ram_peak,ram_auc,disk_mean,disk_peak,disk_auc,net_rx_peak_kbps,net_tx_peak_kbps
+10,38,21,336,12.423409827941175,66.7439236,4137.0950905,1345.4390977455885,1357.77812,450733.18971675,4.063725489705882,93.0,1367.83333325,0.0,0.0

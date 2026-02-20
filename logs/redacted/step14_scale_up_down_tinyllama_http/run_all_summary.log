@@ -1,0 +1,74 @@
+========================================
+STEP: step14_scale_up_down_tinyllama_http
+RUNS: 10
+START(KST): 2026-02-20 15:54:38 KST
+========================================
+
+--- RUN 1/10 START(KST): 2026-02-20 15:54:38 KST ---
+[step14_scale_up_down_tinyllama_http] run_1 done. START=2026-02-20 15:54:57 KST END=2026-02-20 16:01:49 KST
+--- RUN 1/10 END(KST): 2026-02-20 16:01:49 KST ---
+
+--- RUN 2/10 START(KST): 2026-02-20 16:01:54 KST ---
+[step14_scale_up_down_tinyllama_http] run_2 done. START=2026-02-20 16:02:16 KST END=2026-02-20 16:09:10 KST
+--- RUN 2/10 END(KST): 2026-02-20 16:09:10 KST ---
+
+--- RUN 3/10 START(KST): 2026-02-20 16:09:15 KST ---
+[step14_scale_up_down_tinyllama_http] run_3 done. START=2026-02-20 16:09:39 KST END=2026-02-20 16:16:47 KST
+--- RUN 3/10 END(KST): 2026-02-20 16:16:47 KST ---
+
+--- RUN 4/10 START(KST): 2026-02-20 16:16:52 KST ---
+[step14_scale_up_down_tinyllama_http] run_4 done. START=2026-02-20 16:17:16 KST END=2026-02-20 16:23:05 KST
+--- RUN 4/10 END(KST): 2026-02-20 16:23:05 KST ---
+
+--- RUN 5/10 START(KST): 2026-02-20 16:23:10 KST ---
+[step14_scale_up_down_tinyllama_http] run_5 done. START=2026-02-20 16:23:34 KST END=2026-02-20 16:29:48 KST
+--- RUN 5/10 END(KST): 2026-02-20 16:29:48 KST ---
+
+--- RUN 6/10 START(KST): 2026-02-20 16:29:53 KST ---
+[step14_scale_up_down_tinyllama_http] run_6 done. START=2026-02-20 16:30:17 KST END=2026-02-20 16:36:08 KST
+--- RUN 6/10 END(KST): 2026-02-20 16:36:08 KST ---
+
+--- RUN 7/10 START(KST): 2026-02-20 16:36:13 KST ---
+[step14_scale_up_down_tinyllama_http] run_7 done. START=2026-02-20 16:36:36 KST END=2026-02-20 16:41:51 KST
+--- RUN 7/10 END(KST): 2026-02-20 16:41:51 KST ---
+
+--- RUN 8/10 START(KST): 2026-02-20 16:41:56 KST ---
+[step14_scale_up_down_tinyllama_http] run_8 done. START=2026-02-20 16:42:17 KST END=2026-02-20 16:48:54 KST
+--- RUN 8/10 END(KST): 2026-02-20 16:48:54 KST ---
+
+--- RUN 9/10 START(KST): 2026-02-20 16:48:59 KST ---
+[step14_scale_up_down_tinyllama_http] run_9 done. START=2026-02-20 16:49:23 KST END=2026-02-20 16:55:58 KST
+--- RUN 9/10 END(KST): 2026-02-20 16:55:58 KST ---
+
+--- RUN 10/10 START(KST): 2026-02-20 16:56:03 KST ---
+[step14_scale_up_down_tinyllama_http] run_10 done. START=2026-02-20 16:56:27 KST END=2026-02-20 17:02:03 KST
+--- RUN 10/10 END(KST): 2026-02-20 17:02:03 KST ---
+
+=== plotting Fig1/Fig2 ===
+[run_1] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_1/fig1_timeseries.png
+[run_2] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_2/fig1_timeseries.png
+[run_3] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_3/fig1_timeseries.png
+[run_4] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_4/fig1_timeseries.png
+[run_5] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_5/fig1_timeseries.png
+[run_6] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_6/fig1_timeseries.png
+[run_7] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_7/fig1_timeseries.png
+[run_8] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_8/fig1_timeseries.png
+[run_9] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_9/fig1_timeseries.png
+[run_10] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_10/fig1_timeseries.png
+
+Summary -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/summary.csv
+ run  T_scale_up  T_scale_down  T_total  cpu_peak   ram_peak  net_rx_peak_kbps
+   1          51            23      412 29.641198 1385.88126           0.00000
+   2          49            24      414 62.008831 1393.09922           0.00031
+   3          38            26      428 48.342733 1374.13672           0.00052
+   4          41            25      349 38.004434 1388.31562           0.00000
+   5          39            23      374 29.838705 1381.31874           0.00000
+   6          38            22      351 33.073768 1390.80232           0.00000
+   7          51            21      315 34.191228 1387.29690           0.00000
+   8          39            27      397 73.381385 1381.47424           0.00000
+   9          52            24      395 21.510077 1371.78830           0.00000
+  10          38            21      336 66.743924 1357.77812           0.00000
+Fig2 saved: /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/fig2_distribution.png
+========================================
+END(KST): 2026-02-20 17:02:39 KST
+========================================
