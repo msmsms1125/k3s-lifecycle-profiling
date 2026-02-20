@@ -1,0 +1,2 @@
+run_id,start_epoch,ready_epoch,load_start_epoch,load_end_epoch,end_epoch,t_ready_sec,t_total_sec,cpu_mean,cpu_peak,cpu_auc,ram_mean,ram_peak,ram_auc,disk_mean,disk_peak,disk_auc,net_rx_mean,net_rx_peak,net_rx_auc,net_tx_mean,net_tx_peak,net_tx_auc,req_count,req_latency_mean_ms,req_latency_p95_ms,req_latency_max_ms
+1,1771585692,1771585727,1771585727,1771585781,1771585992,35.0,300.0,11.66382948,56.7700826,3335.69810225,1356.7998490000002,1379.38514,400199.51725,4.841666666666667,88.2,1228.25,0.010346666666666667,0.3104,3.104,0.0,0.0,0.0,10,4289.8,6487.499999999999,7032.0

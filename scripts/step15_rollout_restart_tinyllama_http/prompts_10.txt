@@ -1,0 +1,10 @@
+What is 2 + 2?
+Name three colors.
+What is the capital of France?
+Is water wet?
+Explain what a neural network is in simple terms.
+Describe the water cycle briefly.
+What are the main differences between Python and Java?
+Explain the concept of recursion in programming with an example.
+Describe the causes and effects of climate change, including how human activities contribute to global warming and what we can do to mitigate its impact on the environment.
+Explain the history of the internet from its origins as ARPANET to the modern world wide web, including key milestones and how it has transformed communication and commerce globally.

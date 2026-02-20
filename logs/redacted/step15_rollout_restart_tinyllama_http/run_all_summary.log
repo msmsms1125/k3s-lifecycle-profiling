@@ -1,0 +1,366 @@
+STEP=step15_rollout_restart_tinyllama_http
+RUNS=10
+===== RUN 1 =====
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=1
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771585692
+START_KST=2026-02-20 20:08:12 KST
+END_TARGET_EPOCH=1771585992
+END_TARGET_KST=2026-02-20 20:13:12 KST
+BASE_IP=192.168.50.162
+READY_EPOCH=1771585727
+READY_KST=2026-02-20 20:08:47 KST
+T_READY_SEC=35
+LOAD_START_EPOCH=1771585727
+LOAD_START_KST=2026-02-20 20:08:47 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771585781
+LOAD_END_KST=2026-02-20 20:09:41 KST
+T_LOAD_SEC=54
+END_EPOCH=1771585992
+END_KST=2026-02-20 20:13:12 KST
+OVERRUN=0
+T_TOTAL_SEC=300
+=== run_1 DONE ===
+START=2026-02-20 20:08:12 KST END=2026-02-20 20:13:12 KST
+LOG_FILE=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_1.log
+REQ_CSV=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_1_requests.csv
+DATA_DIR=/home/yhgwpi/ms-k3s-performance-analysis/data/netdata/step15_rollout_restart_tinyllama_http/run_1
+===== RUN 2 =====
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=2
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771585992
+START_KST=2026-02-20 20:13:12 KST
+END_TARGET_EPOCH=1771586292
+END_TARGET_KST=2026-02-20 20:18:12 KST
+curl: (28) Connection timed out after 5001 milliseconds
+BASE_IP=192.168.50.75
+READY_EPOCH=1771586037
+READY_KST=2026-02-20 20:13:57 KST
+T_READY_SEC=45
+LOAD_START_EPOCH=1771586037
+LOAD_START_KST=2026-02-20 20:13:57 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771586090
+LOAD_END_KST=2026-02-20 20:14:50 KST
+T_LOAD_SEC=53
+END_EPOCH=1771586292
+END_KST=2026-02-20 20:18:12 KST
+OVERRUN=0
+T_TOTAL_SEC=300
+=== run_2 DONE ===
+START=2026-02-20 20:13:12 KST END=2026-02-20 20:18:12 KST
+LOG_FILE=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_2.log
+REQ_CSV=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_2_requests.csv
+DATA_DIR=/home/yhgwpi/ms-k3s-performance-analysis/data/netdata/step15_rollout_restart_tinyllama_http/run_2
+===== RUN 3 =====
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=3
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771586293
+START_KST=2026-02-20 20:18:13 KST
+END_TARGET_EPOCH=1771586593
+END_TARGET_KST=2026-02-20 20:23:13 KST
+BASE_IP=192.168.50.166
+READY_EPOCH=1771586328
+READY_KST=2026-02-20 20:18:48 KST
+T_READY_SEC=35
+LOAD_START_EPOCH=1771586328
+LOAD_START_KST=2026-02-20 20:18:48 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771586380
+LOAD_END_KST=2026-02-20 20:19:40 KST
+T_LOAD_SEC=52
+END_EPOCH=1771586593
+END_KST=2026-02-20 20:23:13 KST
+OVERRUN=0
+T_TOTAL_SEC=300
+=== run_3 DONE ===
+START=2026-02-20 20:18:13 KST END=2026-02-20 20:23:13 KST
+LOG_FILE=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_3.log
+REQ_CSV=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_3_requests.csv
+DATA_DIR=/home/yhgwpi/ms-k3s-performance-analysis/data/netdata/step15_rollout_restart_tinyllama_http/run_3
+===== RUN 4 =====
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=4
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771586594
+START_KST=2026-02-20 20:23:14 KST
+END_TARGET_EPOCH=1771586894
+END_TARGET_KST=2026-02-20 20:28:14 KST
+BASE_IP=192.168.50.75
+READY_EPOCH=1771586629
+READY_KST=2026-02-20 20:23:49 KST
+T_READY_SEC=35
+LOAD_START_EPOCH=1771586629
+LOAD_START_KST=2026-02-20 20:23:49 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771586682
+LOAD_END_KST=2026-02-20 20:24:42 KST
+T_LOAD_SEC=53
+END_EPOCH=1771586894
+END_KST=2026-02-20 20:28:14 KST
+OVERRUN=0
+T_TOTAL_SEC=300
+=== run_4 DONE ===
+START=2026-02-20 20:23:14 KST END=2026-02-20 20:28:14 KST
+LOG_FILE=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_4.log
+REQ_CSV=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_4_requests.csv
+DATA_DIR=/home/yhgwpi/ms-k3s-performance-analysis/data/netdata/step15_rollout_restart_tinyllama_http/run_4
+===== RUN 5 =====
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=5
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771586895
+START_KST=2026-02-20 20:28:15 KST
+END_TARGET_EPOCH=1771587195
+END_TARGET_KST=2026-02-20 20:33:15 KST
+BASE_IP=192.168.50.166
+READY_EPOCH=1771586930
+READY_KST=2026-02-20 20:28:50 KST
+T_READY_SEC=35
+LOAD_START_EPOCH=1771586930
+LOAD_START_KST=2026-02-20 20:28:50 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771586981
+LOAD_END_KST=2026-02-20 20:29:41 KST
+T_LOAD_SEC=51
+END_EPOCH=1771587195
+END_KST=2026-02-20 20:33:15 KST
+OVERRUN=0
+T_TOTAL_SEC=300
+=== run_5 DONE ===
+START=2026-02-20 20:28:15 KST END=2026-02-20 20:33:15 KST
+LOG_FILE=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_5.log
+REQ_CSV=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_5_requests.csv
+DATA_DIR=/home/yhgwpi/ms-k3s-performance-analysis/data/netdata/step15_rollout_restart_tinyllama_http/run_5
+===== RUN 6 =====
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=6
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771587195
+START_KST=2026-02-20 20:33:15 KST
+END_TARGET_EPOCH=1771587495
+END_TARGET_KST=2026-02-20 20:38:15 KST
+BASE_IP=192.168.50.75
+READY_EPOCH=1771587231
+READY_KST=2026-02-20 20:33:51 KST
+T_READY_SEC=36
+LOAD_START_EPOCH=1771587231
+LOAD_START_KST=2026-02-20 20:33:51 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771587284
+LOAD_END_KST=2026-02-20 20:34:44 KST
+T_LOAD_SEC=53
+END_EPOCH=1771587495
+END_KST=2026-02-20 20:38:15 KST
+OVERRUN=0
+T_TOTAL_SEC=300
+=== run_6 DONE ===
+START=2026-02-20 20:33:15 KST END=2026-02-20 20:38:15 KST
+LOG_FILE=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_6.log
+REQ_CSV=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_6_requests.csv
+DATA_DIR=/home/yhgwpi/ms-k3s-performance-analysis/data/netdata/step15_rollout_restart_tinyllama_http/run_6
+===== RUN 7 =====
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=7
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771587495
+START_KST=2026-02-20 20:38:15 KST
+END_TARGET_EPOCH=1771587795
+END_TARGET_KST=2026-02-20 20:43:15 KST
+BASE_IP=192.168.50.75
+READY_EPOCH=1771587533
+READY_KST=2026-02-20 20:38:53 KST
+T_READY_SEC=38
+LOAD_START_EPOCH=1771587533
+LOAD_START_KST=2026-02-20 20:38:53 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771587720
+LOAD_END_KST=2026-02-20 20:42:00 KST
+T_LOAD_SEC=187
+END_EPOCH=1771587795
+END_KST=2026-02-20 20:43:15 KST
+OVERRUN=0
+T_TOTAL_SEC=300
+=== run_7 DONE ===
+START=2026-02-20 20:38:15 KST END=2026-02-20 20:43:15 KST
+LOG_FILE=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_7.log
+REQ_CSV=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_7_requests.csv
+DATA_DIR=/home/yhgwpi/ms-k3s-performance-analysis/data/netdata/step15_rollout_restart_tinyllama_http/run_7
+===== RUN 8 =====
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=8
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771587796
+START_KST=2026-02-20 20:43:16 KST
+END_TARGET_EPOCH=1771588096
+END_TARGET_KST=2026-02-20 20:48:16 KST
+BASE_IP=192.168.50.166
+READY_EPOCH=1771587831
+READY_KST=2026-02-20 20:43:51 KST
+T_READY_SEC=35
+LOAD_START_EPOCH=1771587831
+LOAD_START_KST=2026-02-20 20:43:51 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771587882
+LOAD_END_KST=2026-02-20 20:44:42 KST
+T_LOAD_SEC=51
+END_EPOCH=1771588096
+END_KST=2026-02-20 20:48:16 KST
+OVERRUN=0
+T_TOTAL_SEC=300
+=== run_8 DONE ===
+START=2026-02-20 20:43:16 KST END=2026-02-20 20:48:16 KST
+LOG_FILE=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_8.log
+REQ_CSV=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_8_requests.csv
+DATA_DIR=/home/yhgwpi/ms-k3s-performance-analysis/data/netdata/step15_rollout_restart_tinyllama_http/run_8
+===== RUN 9 =====
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=9
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771588096
+START_KST=2026-02-20 20:48:16 KST
+END_TARGET_EPOCH=1771588396
+END_TARGET_KST=2026-02-20 20:53:16 KST
+BASE_IP=192.168.50.166
+READY_EPOCH=1771588132
+READY_KST=2026-02-20 20:48:52 KST
+T_READY_SEC=36
+LOAD_START_EPOCH=1771588132
+LOAD_START_KST=2026-02-20 20:48:52 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771588184
+LOAD_END_KST=2026-02-20 20:49:44 KST
+T_LOAD_SEC=52
+END_EPOCH=1771588396
+END_KST=2026-02-20 20:53:16 KST
+OVERRUN=0
+T_TOTAL_SEC=300
+=== run_9 DONE ===
+START=2026-02-20 20:48:16 KST END=2026-02-20 20:53:16 KST
+LOG_FILE=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_9.log
+REQ_CSV=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_9_requests.csv
+DATA_DIR=/home/yhgwpi/ms-k3s-performance-analysis/data/netdata/step15_rollout_restart_tinyllama_http/run_9
+===== RUN 10 =====
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=10
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771588397
+START_KST=2026-02-20 20:53:17 KST
+END_TARGET_EPOCH=1771588697
+END_TARGET_KST=2026-02-20 20:58:17 KST
+curl: (28) Connection timed out after 5000 milliseconds
+BASE_IP=192.168.50.162
+READY_EPOCH=1771588445
+READY_KST=2026-02-20 20:54:05 KST
+T_READY_SEC=48
+LOAD_START_EPOCH=1771588445
+LOAD_START_KST=2026-02-20 20:54:05 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771588637
+LOAD_END_KST=2026-02-20 20:57:17 KST
+T_LOAD_SEC=192
+END_EPOCH=1771588697
+END_KST=2026-02-20 20:58:17 KST
+OVERRUN=0
+T_TOTAL_SEC=300
+=== run_10 DONE ===
+START=2026-02-20 20:53:17 KST END=2026-02-20 20:58:17 KST
+LOG_FILE=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_10.log
+REQ_CSV=/home/yhgwpi/ms-k3s-performance-analysis/logs/redacted/step15_rollout_restart_tinyllama_http/run_10_requests.csv
+DATA_DIR=/home/yhgwpi/ms-k3s-performance-analysis/data/netdata/step15_rollout_restart_tinyllama_http/run_10
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart.py:85: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.trapz(y, x))
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart.py:85: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.trapz(y, x))
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart.py:85: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.trapz(y, x))
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart.py:85: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.trapz(y, x))
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart.py:85: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.trapz(y, x))
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart.py:85: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.trapz(y, x))
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart.py:85: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.trapz(y, x))
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart.py:85: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.trapz(y, x))
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart.py:85: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.trapz(y, x))
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart.py:85: DeprecationWarning: `trapz` is deprecated. Use `trapezoid` instead, or one of the numerical integration functions in `scipy.integrate`.
+  return float(np.trapz(y, x))
+/home/yhgwpi/ms-k3s-performance-analysis/analysis/plot_step15_tinyllama_rollout_restart_distribution.py:63: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  ax.boxplot(vals, vert=False, labels=labels, showmeans=True)

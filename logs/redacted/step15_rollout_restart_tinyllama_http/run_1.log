@@ -1,0 +1,32 @@
+STEP=step15_rollout_restart_tinyllama_http
+RUN_ID=1
+NAMESPACE=default
+SVC=tinyllama-service
+SELECTOR=app=tinyllama
+NODEPORT=30080
+ENDPOINT_PATH=/v1/chat/completions
+MODEL_NAME=tinyllama
+START_EPOCH=1771585692
+START_KST=2026-02-20 20:08:12 KST
+END_TARGET_EPOCH=1771585992
+END_TARGET_KST=2026-02-20 20:13:12 KST
+deployment.apps/tinyllama-server restarted
+Waiting for deployment "tinyllama-server" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "tinyllama-server" rollout to finish: 1 old replicas are pending termination...
+deployment "tinyllama-server" successfully rolled out
+BASE_IP=192.168.50.162
+READY_EPOCH=1771585727
+READY_KST=2026-02-20 20:08:47 KST
+T_READY_SEC=35
+LOAD_START_EPOCH=1771585727
+LOAD_START_KST=2026-02-20 20:08:47 KST
+LOAD_DURATION_SEC=10
+LOAD_RPS=1
+REQS_TOTAL=10
+LOAD_END_EPOCH=1771585781
+LOAD_END_KST=2026-02-20 20:09:41 KST
+T_LOAD_SEC=54
+END_EPOCH=1771585992
+END_KST=2026-02-20 20:13:12 KST
+OVERRUN=0
+T_TOTAL_SEC=300
