@@ -41,6 +41,14 @@ def auc(t: np.ndarray, y: np.ndarray) -> float:
         return float("nan")
     return float(np.trapz(y, t))
 
+def parse_time_series(series: pd.Series) -> np.ndarray:
+    if pd.api.types.is_numeric_dtype(series):
+        return series.to_numpy(dtype=float)
+    dt = pd.to_datetime(series)
+    if dt.dt.tz is None:
+        dt = dt.dt.tz_localize('Asia/Seoul')
+    return (dt.astype('int64') / 1e9).to_numpy(dtype=float)
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--step", required=True)
@@ -80,7 +88,7 @@ def main() -> None:
     net = read_netdata_csv(os.path.join(net_dir, "net_eth0.csv"))
 
     t_cpu_col = time_col(cpu)
-    t_cpu = cpu[t_cpu_col].to_numpy(dtype=float)
+    t_cpu = parse_time_series(cpu[t_cpu_col])
     cpu_cols = [c for c in cpu.columns if c != t_cpu_col]
     idle_cols = [c for c in cpu_cols if "idle" in c.lower()]
     if idle_cols:
@@ -89,17 +97,17 @@ def main() -> None:
         cpu_used = cpu[cpu_cols].sum(axis=1).to_numpy(dtype=float)
 
     t_ram_col = time_col(ram)
-    t_ram = ram[t_ram_col].to_numpy(dtype=float)
+    t_ram = parse_time_series(ram[t_ram_col])
     ram_used_col = pick_col(ram, ["used"])
     ram_used = ram[ram_used_col].to_numpy(dtype=float)
 
     t_disk_col = time_col(disk)
-    t_disk = disk[t_disk_col].to_numpy(dtype=float)
+    t_disk = parse_time_series(disk[t_disk_col])
     disk_col = pick_col(disk, ["util", "utilization"])
     disk_util = disk[disk_col].to_numpy(dtype=float)
 
     t_net_col = time_col(net)
-    t_net = net[t_net_col].to_numpy(dtype=float)
+    t_net = parse_time_series(net[t_net_col])
     rx_col = pick_col(net, ["received", "recv", "rx"])
     tx_col = pick_col(net, ["sent", "send", "tx"])
     net_rx = net[rx_col].to_numpy(dtype=float)
