@@ -1,0 +1,19 @@
+STEP_NAME=step16_delete_tinyllama_http_deployment
+RUN_ID=1
+NAMESPACE=default
+SERVICE_NAME=tinyllama-service
+DEPLOYMENT_NAME=tinyllama-server
+LABEL_SELECTOR=app=tinyllama
+POD_NAME=tinyllama-server-7f74d9cbcd-9msn2
+NODE_NAME=raspberrypi-pi04
+NODE_IP=192.168.50.75
+NODEPORT=30080
+BASE_URL=http://192.168.50.75:30080
+READY_EPOCH=1771739042
+START_EPOCH=1771739042
+DELETE_COMPLETE_EPOCH=1771739044
+END_EPOCH=1771739104
+ORPHAN_CHECK_BEGIN
+yhgwpi    311028  0.2  0.0   7204  3736 pts/0    S+   14:43   0:00 bash ./scripts/step16_delete_tinyllama_http_deployment/run_experiment.sh 1
+yhgwpi    311285  0.0  0.0   7204  2088 pts/0    S+   14:44   0:00 bash ./scripts/step16_delete_tinyllama_http_deployment/run_experiment.sh 1
+ORPHAN_CHECK_END

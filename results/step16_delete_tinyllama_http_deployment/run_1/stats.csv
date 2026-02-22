@@ -1,0 +1,2 @@
+run,START_EPOCH,DELETE_COMPLETE_EPOCH,END_EPOCH,T_delete,T_total,cpu_mean,cpu_peak,cpu_auc,ram_mean,ram_peak,ram_auc,disk_mean,disk_peak,disk_auc,net_rx_peak,net_tx_peak,net_rx_auc,net_tx_auc,mem_release_latency_s,idle_recovery_time_s
+1,1771739042,1771739044,1771739104,2.0,62.0,61.40185509166667,179.7981393,3124.533121,6845.527983333333,6900.6132,376360.56575,7.166666666666667,25.0,367.5,0.0,0.0,0.0,0.0,8.0,8.0

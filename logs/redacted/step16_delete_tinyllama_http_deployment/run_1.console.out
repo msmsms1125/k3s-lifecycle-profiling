@@ -1,0 +1,14 @@
+STEP=step16_delete_tinyllama_http_deployment
+RUN_ID=1
+NS=default
+DEPLOY_YAML=/home/yhgwpi/ms-k3s-performance-analysis/scripts/step12_apply_tinyllama_http/tinyllama-deployment.yaml
+SVC_YAML=/home/yhgwpi/ms-k3s-performance-analysis/scripts/step12_apply_tinyllama_http/tinyllama-service.yaml
+2026-02-21T19:48:05+09:00
+=== PREP: apply service/deployment ===
+service/tinyllama-service unchanged
+deployment.apps/tinyllama-server configured
+DEPLOY_RES=deployment.apps/tinyllama-server
+SVC_RES=service/tinyllama-service
+=== WAIT: rollout ready ===
+Waiting for deployment "tinyllama-server" rollout to finish: 1 old replicas are pending termination...
+error: deployment "tinyllama-server" exceeded its progress deadline
