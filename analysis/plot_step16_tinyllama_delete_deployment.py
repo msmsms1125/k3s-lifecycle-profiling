@@ -38,14 +38,12 @@ def _to_epoch_seconds_from_any_time(
     if int(t_num.notna().sum()) > 0:
         t = t_num.astype(float)
 
-        # unit normalization (heuristic)
         med = float(t.dropna().median())
         if med > 1e14:      # likely microseconds since epoch
             t = t / 1e6
         elif med > 1e11:    # likely milliseconds since epoch
             t = t / 1e3
 
-        # relative seconds -> epoch seconds
         if start_epoch is not None:
             mx = float(t.dropna().max()) if int(t.dropna().shape[0]) > 0 else float("nan")
             if np.isfinite(mx) and mx < 1e7:
@@ -53,19 +51,16 @@ def _to_epoch_seconds_from_any_time(
 
         return t
 
-    # 2) Datetime strings -> assume local timezone then convert to UTC epoch seconds
     dt = pd.to_datetime(s, errors="coerce")
     if int(dt.notna().sum()) == 0:
         raise RuntimeError("cannot parse time column: neither numeric nor datetime")
 
-    # If tz-naive, assume Asia/Seoul (configurable)
     if dt.dt.tz is None:
         dt = dt.dt.tz_localize(assume_tz)
 
     dt_utc = dt.dt.tz_convert("UTC")
     dt_utc_naive = dt_utc.dt.tz_localize(None)
 
-    # Convert to epoch seconds (ns -> s)
     t = dt_utc_naive.astype("int64") / 1e9
     return t.astype(float)
 
@@ -247,7 +242,6 @@ def main():
     delete_done = epochs["DELETE_COMPLETE_EPOCH"]
     end = epochs["END_EPOCH"]
 
-    # Read + clip within [START, END]
     cpu_df = clip_df(read_netdata_csv(data_dir / "system_cpu.csv", tz, start), start, end, "system_cpu.csv")
     ram_df = clip_df(read_netdata_csv(data_dir / "system_ram.csv", tz, start), start, end, "system_ram.csv")
 
@@ -281,7 +275,6 @@ def main():
     t_delete = float(delete_done - start)
     t_total = float(end - start)
 
-    # Fig1
     fig, axes = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
 
     axes[0].plot(t_rel_cpu, cpu_y)
@@ -312,7 +305,6 @@ def main():
     fig.savefig(result_dir / "fig1_timeseries.png", dpi=150)
     plt.close(fig)
 
-    # Stats (computed on clipped window)
     cpu_mean = float(np.nanmean(cpu_y))
     cpu_peak = float(np.nanmax(cpu_y))
     cpu_auc = auc(t_rel_cpu, cpu_y)
@@ -332,7 +324,6 @@ def main():
 
     mem_release_latency = plateau_time_seconds(t_rel_ram, ram_y, tail_points=12, tol_ratio=0.05)
 
-    # Align RAM onto CPU timebase for joint stability check
     ram_on_cpu = _interp_to_base(t_rel_cpu, t_rel_ram, ram_y)
     idle_recovery_time = stable_time_seconds(
         t_rel_cpu,
