@@ -35,7 +35,6 @@ def main() -> None:
     summary = pd.DataFrame(rows).sort_values("run_id")
     summary.to_csv(step_dir / "summary.csv", index=False)
 
-    # Fig2: 주요 분포(rollout duration + resource peaks + latency)
     metrics = [
         ("t_ready_sec", "T_ready (sec)"),
         ("cpu_peak", "CPU peak"),
