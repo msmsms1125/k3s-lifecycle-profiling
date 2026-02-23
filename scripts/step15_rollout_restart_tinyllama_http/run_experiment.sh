@@ -9,7 +9,6 @@ fi
 
 STEP_NAME="step15_rollout_restart_tinyllama_http"
 
-# --- absolute paths (상대경로 문제 방지) ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
@@ -22,41 +21,33 @@ mkdir -p "${LOG_DIR}" "${DATA_DIR}" "${RESULT_DIR}"
 LOG_FILE="${LOG_DIR}/run_${RUN_ID}.log"
 REQ_CSV="${LOG_DIR}/run_${RUN_ID}_requests.csv"
 
-# --- k8s targets ---
 NAMESPACE="${NAMESPACE:-default}"
 DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-}"
 SVC="${SVC:-tinyllama-service}"
 SELECTOR="${SELECTOR:-app=tinyllama}"
 
-# --- HTTP endpoint (네 curl 결과 기준으로 확정) ---
 ENDPOINT_PATH="${ENDPOINT_PATH:-/v1/chat/completions}"
 MODEL_NAME="${MODEL_NAME:-tinyllama}"
 MAX_TOKENS_READY="${MAX_TOKENS_READY:-5}"
 MAX_TOKENS_LOAD="${MAX_TOKENS_LOAD:-64}"
 
-# NodePort: env로 주면 우선 사용, 없으면 svc에서 조회, 그것도 실패하면 30080
 NODEPORT="${NODEPORT:-}"
 
-# READY: rollout status + HTTP 200
 READY_TIMEOUT_SEC="${READY_TIMEOUT_SEC:-180}"
 
-# LOAD: 1 RPS, 10 sec => 10 requests
 LOAD_RPS="${LOAD_RPS:-1}"
 LOAD_DURATION_SEC="${LOAD_DURATION_SEC:-10}"
 RPS_INTERVAL_SEC="${RPS_INTERVAL_SEC:-1}"
 PROMPTS_FILE="${PROMPTS_FILE:-${SCRIPT_DIR}/prompts_10.txt}"
 
-# END_EPOCH = START + 300s
 DURATION_SEC="${DURATION_SEC:-300}"
 
-# --- netdata (step14 스타일) ---
 NETDATA_URL="${NETDATA_URL:-http://127.0.0.1:19999}"
 CPU_CHART="${CPU_CHART:-system.cpu}"
 RAM_CHART="${RAM_CHART:-system.ram}"
 DISK_UTIL_CHART="${DISK_UTIL_CHART:-disk_util.mmcblk0}"
 NET_CHART="${NET_CHART:-net.eth0}"
 
-# --- helpers ---
 epoch_to_kst() { TZ="Asia/Seoul" date -d "@$1" "+%Y-%m-%d %H:%M:%S KST"; }
 
 log_kv() { echo "${1}=${2}" | tee -a "${LOG_FILE}"; }
@@ -193,7 +184,6 @@ export_csv() {
   fi
 }
 
-# --- start ---
 : > "${LOG_FILE}"
 log_kv "STEP" "${STEP_NAME}"
 log_kv "RUN_ID" "${RUN_ID}"
@@ -208,7 +198,6 @@ log_kv "NODEPORT" "${NODEPORT_EFFECTIVE}"
 log_kv "ENDPOINT_PATH" "${ENDPOINT_PATH}"
 log_kv "MODEL_NAME" "${MODEL_NAME}"
 
-# START: rollout restart 실행 시각
 START_EPOCH="$(date +%s)"
 END_TARGET_EPOCH="$((START_EPOCH + DURATION_SEC))"
 log_kv "START_EPOCH" "${START_EPOCH}"
@@ -216,11 +205,9 @@ log_kv "START_KST" "$(epoch_to_kst "${START_EPOCH}")"
 log_kv "END_TARGET_EPOCH" "${END_TARGET_EPOCH}"
 log_kv "END_TARGET_KST" "$(epoch_to_kst "${END_TARGET_EPOCH}")"
 
-# rollout restart + rollout status
 kubectl -n "${NAMESPACE}" rollout restart "deployment/${DEPLOYMENT_NAME}" >> "${LOG_FILE}" 2>&1
 kubectl -n "${NAMESPACE}" rollout status "deployment/${DEPLOYMENT_NAME}" --timeout=600s >> "${LOG_FILE}" 2>&1 || true
 
-# READY: HTTP 200까지
 BASE_IP="$(wait_http_200_after_restart "${NODEPORT_EFFECTIVE}" "${READY_TIMEOUT_SEC}")" || {
   log_kv "READY_EPOCH" "NA"
   log_kv "READY_KST" "NA"
@@ -234,7 +221,6 @@ log_kv "READY_EPOCH" "${READY_EPOCH}"
 log_kv "READY_KST" "$(epoch_to_kst "${READY_EPOCH}")"
 log_kv "T_READY_SEC" "$((READY_EPOCH - START_EPOCH))"
 
-# LOAD
 REQS_TOTAL="$((LOAD_DURATION_SEC * LOAD_RPS))"
 (( REQS_TOTAL < 1 )) && REQS_TOTAL=1
 
@@ -273,7 +259,6 @@ log_kv "LOAD_END_EPOCH" "${LOAD_END_EPOCH}"
 log_kv "LOAD_END_KST" "$(epoch_to_kst "${LOAD_END_EPOCH}")"
 log_kv "T_LOAD_SEC" "$((LOAD_END_EPOCH - LOAD_START_EPOCH))"
 
-# END (target=START+300, overruns 처리)
 now_epoch="$(date +%s)"
 if (( now_epoch < END_TARGET_EPOCH )); then
   sleep "$((END_TARGET_EPOCH - now_epoch))"
@@ -289,7 +274,6 @@ log_kv "END_KST" "$(epoch_to_kst "${END_EPOCH}")"
 log_kv "OVERRUN" "${OVERRUN}"
 log_kv "T_TOTAL_SEC" "$((END_EPOCH - START_EPOCH))"
 
-# netdata export
 export_csv "${CPU_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${DATA_DIR}/system_cpu.csv"
 export_csv "${RAM_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${DATA_DIR}/system_ram.csv"
 export_csv "${DISK_UTIL_CHART}" "${START_EPOCH}" "${END_EPOCH}" "${DATA_DIR}/disk_util_mmcblk0.csv"
