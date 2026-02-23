@@ -130,7 +130,6 @@ def main() -> None:
     disk_df = read_netdata_csv(disk_files[0]) if disk_files else pd.DataFrame()
     net_df = read_netdata_csv(net_files[0]) if net_files else pd.DataFrame()
 
-    # time axis (seconds from START)
     def rel_time(df):
         if df.empty:
             return np.array([])
@@ -186,7 +185,6 @@ def main() -> None:
     fig.savefig(out_fig, dpi=150)
     plt.close(fig)
 
-    # stats
     def basic_stats(t, y):
         if len(t) < 2 or len(y) < 2:
             return (float("nan"), float("nan"), float("nan"))
@@ -241,7 +239,6 @@ def main() -> None:
 
     stats.to_csv(result_dir / "stats.csv", index=False)
 
-    # copy log
     shutil.copy2(log_file, result_dir / "redacted.log")
 
 
