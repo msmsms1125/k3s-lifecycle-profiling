@@ -1,4 +1,3 @@
-# 시간 확인
 print_kst() {
     TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M:%S KST'
 }
