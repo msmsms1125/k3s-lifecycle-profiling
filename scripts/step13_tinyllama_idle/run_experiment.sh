@@ -1,7 +1,4 @@
 #!/bin/bash
-# Step 13: Deployment idle (TinyLlama) 300s
-# Description: Measures baseline resource usage for 300s while the model is loaded but idle.
-
 RUN_NUM=$1
 DURATION=300
 STABILIZATION=15
@@ -28,7 +25,6 @@ export START_TIMESTAMP=$START_TIME
 export END_TIMESTAMP=$END_TIME
 export OUTPUT_DIR=$RESULT_DIR
 
-# Assuming netdata_export.sh exists in utils and handles CSV export based on timestamps
 if [ -f "../utils/netdata_export.sh" ]; then
     ../utils/netdata_export.sh "$OUTPUT_DIR" "$START_TIMESTAMP" "$END_TIMESTAMP"
 else
