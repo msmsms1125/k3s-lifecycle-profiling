@@ -22,7 +22,6 @@ for i in $(seq 1 "${RUNS}"); do
   "${SCRIPT_DIR}/run_experiment.sh" "${i}" >> "${SUMMARY_LOG}" 2>&1
 done
 
-# plots + stats (Fig1/Stats per run, Fig2/Summary per step)
 for i in $(seq 1 "${RUNS}"); do
   python3 "${REPO_ROOT}/analysis/plot_step15_tinyllama_rollout_restart.py" \
     --step "${STEP_NAME}" --run "${i}" >> "${SUMMARY_LOG}" 2>&1
