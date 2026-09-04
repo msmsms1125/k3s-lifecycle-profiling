@@ -1,0 +1,60 @@
+short	Name one benefit of container orchestration.
+short	What is a Kubernetes pod?
+short	Define horizontal scaling.
+short	What does a readiness probe check?
+short	Explain CPU utilization in one sentence.
+short	What is a control plane?
+short	Define service discovery.
+short	What is an HTTP status code?
+short	Name one Linux monitoring tool.
+short	What is request latency?
+short	Define a rolling restart.
+short	What is a container image?
+short	Explain a node in Kubernetes.
+short	What does RPS mean?
+short	Define a deployment replica.
+short	What is a health check?
+short	Name one reason to collect metrics.
+short	What is an ARM64 processor?
+short	Define a workload baseline.
+short	What is a percentile?
+medium	Explain how Kubernetes schedules a new pod onto an available worker node.
+medium	Compare a readiness probe with a liveness probe in a small web service.
+medium	Describe why repeated benchmark runs are more useful than a single run.
+medium	Explain how CPU and memory measurements can change during a rolling restart.
+medium	Describe the purpose of a Kubernetes Service in front of an inference server.
+medium	Explain why a monitoring sampling interval affects observed peak utilization.
+medium	Describe one advantage and one limitation of running K3s on small ARM devices.
+medium	Explain how a failed readiness check influences deployment completion time.
+medium	Describe the difference between planned request rate and achieved request rate.
+medium	Explain why timestamps from workload logs and monitoring data must be aligned.
+medium	Describe how cordoning a node changes future pod scheduling decisions.
+medium	Explain why container image versions should be pinned in a reproducible experiment.
+medium	Describe what a confidence interval communicates about repeated measurements.
+medium	Explain how network throughput may change during model inference requests.
+medium	Describe why a warm start may be faster than a cold start for an ML workload.
+medium	Explain what an area-under-the-curve resource metric represents.
+medium	Describe how resource limits can affect inference latency and request queueing.
+medium	Explain why benchmark failures should not be silently ignored by automation.
+medium	Describe one way to validate that a collected metric uses the expected unit.
+medium	Explain why sanitized logs are useful when publishing an infrastructure project.
+long	Design a reproducible experiment that compares Kubernetes cluster idle overhead with the host system baseline, including controls, repeated runs, metrics, and reporting.
+long	Explain how you would diagnose a deployment whose pods remain Pending after one worker node is cordoned, and list the Kubernetes objects and events you would inspect.
+long	Discuss the measurement errors introduced when a five-second monitoring interval is used for an operation that usually completes in fewer than ten seconds.
+long	Describe an open-loop HTTP load test for a small language model server, including request scheduling, concurrency, timeouts, success criteria, and latency percentiles.
+long	Propose a data validation pipeline for CPU, memory, disk, and network time series collected from several Kubernetes nodes during lifecycle events.
+long	Explain the difference between client dispatch delay, server queueing time, time to first token, and total response latency in a streaming inference API.
+long	Describe how you would package raw benchmark data, derived summaries, plots, software versions, and experiment configuration so another engineer can audit the results.
+long	Analyze the tradeoffs of using a local hostPath volume for a model file in a small lab cluster compared with a persistent volume or object storage.
+long	Explain how a rolling restart can influence application availability, CPU spikes, memory pressure, and request latency when only one replica is available.
+long	Propose a CI workflow that validates benchmark analysis code without requiring access to the original physical Kubernetes cluster.
+long	Describe how to compare two-node and four-node K3s testbeds fairly while controlling hardware, workload placement, monitoring overhead, and cache state.
+long	Explain why mean and standard deviation may be insufficient for latency reporting, and describe additional statistics that should be included.
+long	Design a failure-reporting format for a multi-run benchmark so partial collection, analysis errors, and invalid measurements cannot appear as successful results.
+long	Describe how clock synchronization and timezone handling can affect the alignment of Kubernetes event logs with monitoring time series.
+long	Explain how you would determine whether an observed CPU peak is a real workload effect, a unit conversion error, or an aggregation artifact.
+long	Propose a secure but practical deployment configuration for an ARM64 inference container used only in a home lab Kubernetes environment.
+long	Describe how cold model loading, readiness checks, and image availability contribute separately to end-to-end deployment completion time.
+long	Explain how to present benchmark limitations honestly in a portfolio while still demonstrating engineering judgment and useful conclusions.
+long	Design a compact experiment matrix covering cluster startup, deployment, scaling, restart, deletion, idle state, and inference load scenarios.
+long	Describe the evidence you would require before claiming that a system sustains one request per second under a streaming language model workload.
