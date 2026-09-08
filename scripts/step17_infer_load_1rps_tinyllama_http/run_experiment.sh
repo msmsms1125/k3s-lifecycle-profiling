@@ -13,7 +13,6 @@ STEP_NAME="$(basename "$SCRIPT_DIR")"
 
 NS="${NS:-default}"
 SERVICE_NAME="${SERVICE_NAME:-tinyllama-service}"
-
 NETDATA_URL="${NETDATA_URL:-http://localhost:19999}"
 NETDATA_GROUP_SEC="${NETDATA_GROUP_SEC:-5}"
 NETDATA_CHART_CPU="${NETDATA_CHART_CPU:-system.cpu}"
@@ -27,11 +26,19 @@ COOLDOWN_SEC="${COOLDOWN_SEC:-60}"
 N_PREDICT="${N_PREDICT:-32}"
 TEMPERATURE="${TEMPERATURE:-0.1}"
 REQUEST_TIMEOUT_SEC="${REQUEST_TIMEOUT_SEC:-120}"
-
+MAX_WORKERS="${MAX_WORKERS:-0}"
 PROMPTS_FILE="${PROMPTS_FILE:-$SCRIPT_DIR/prompts_60.txt}"
 
-if ! command -v jq >/dev/null 2>&1; then echo "ERROR: jq not found"; exit 1; fi
-if ! command -v curl >/dev/null 2>&1; then echo "ERROR: curl not found"; exit 1; fi
+for cmd in jq curl python3 kubectl; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "ERROR: $cmd not found"
+    exit 1
+  fi
+done
+if [[ ! -s "$PROMPTS_FILE" ]]; then
+  echo "ERROR: prompts file not found or empty: $PROMPTS_FILE"
+  exit 1
+fi
 
 LOG_DIR="$REPO_ROOT/logs/redacted/$STEP_NAME"
 NETDATA_DIR="$REPO_ROOT/data/netdata/$STEP_NAME/run_${RUN_ID}"
@@ -39,7 +46,7 @@ mkdir -p "$LOG_DIR" "$NETDATA_DIR"
 
 LOG_FILE="$LOG_DIR/run_${RUN_ID}.log"
 REQ_CSV="$LOG_DIR/run_${RUN_ID}_requests.csv"
-
+LOAD_SUMMARY_FILE="$LOG_DIR/run_${RUN_ID}_load_summary.json"
 START_EPOCH="$(date +%s)"
 
 SVC_JSON="$(kubectl -n "$NS" get svc "$SERVICE_NAME" -o json)"
@@ -66,33 +73,32 @@ fi
 NODE_NAME="$(kubectl -n "$NS" get pod "$POD_NAME" -o jsonpath='{.spec.nodeName}')"
 NODE_IP="$(kubectl get node "$NODE_NAME" -o json | jq -r '.status.addresses[] | select(.type=="InternalIP") | .address' | head -n 1)"
 if [[ -z "${NODE_IP:-}" ]]; then
-  echo "ERROR: InternalIP not found for node=$NODE_NAME"
+  echo "ERROR: InternalIP not found for selected pod"
   exit 1
 fi
 
 BASE_URL="http://${NODE_IP}:${NODEPORT}"
-
 READY_CODE="$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/v1/models" || true)"
 READY_CODE="${READY_CODE:-000}"
 if [[ "$READY_CODE" != "200" ]]; then
-  echo "ERROR: GET $BASE_URL/v1/models http_code=$READY_CODE"
+  echo "ERROR: model endpoint did not become ready (http_code=$READY_CODE)"
   exit 2
 fi
 READY_EPOCH="$(date +%s)"
 
 ENDPOINT_PATH="/v1/completions"
-
 TEST_CODE="$(curl -s -o /dev/null -w "%{http_code}" \
   -H 'Content-Type: application/json' \
   -d '{"prompt":"Hello","max_tokens":1,"temperature":0.1,"stream":false}' \
   "$BASE_URL$ENDPOINT_PATH" || true)"
 TEST_CODE="${TEST_CODE:-000}"
 if [[ "$TEST_CODE" != 2* ]]; then
-  echo "ERROR: POST $BASE_URL$ENDPOINT_PATH http_code=$TEST_CODE"
+  echo "ERROR: completion endpoint smoke test failed (http_code=$TEST_CODE)"
   exit 2
 fi
 
-LOAD_START_EPOCH="$(( $(date +%s) + 1 ))"
+LOAD_START_EPOCH="$(( $(date +%s) + 3 ))"
+LOAD_END_EPOCH="$(( LOAD_START_EPOCH + LOAD_DURATION_SEC ))"
 
 python3 "$SCRIPT_DIR/load_1rps.py" \
   --base-url "$BASE_URL" \
@@ -105,34 +111,33 @@ python3 "$SCRIPT_DIR/load_1rps.py" \
   --load-start-epoch "$LOAD_START_EPOCH" \
   --n-predict "$N_PREDICT" \
   --temperature "$TEMPERATURE" \
-  --request-timeout-sec "$REQUEST_TIMEOUT_SEC"
+  --request-timeout-sec "$REQUEST_TIMEOUT_SEC" \
+  --max-workers "$MAX_WORKERS" > "$LOAD_SUMMARY_FILE"
 
-LOAD_END_EPOCH="$(date +%s)"
-END_EPOCH="$(( LOAD_END_EPOCH + COOLDOWN_SEC ))"
+jq -e '.planned_requests > 0' "$LOAD_SUMMARY_FILE" >/dev/null
+REQUESTS_DONE_EPOCH="$(date +%s)"
+END_EPOCH="$(( REQUESTS_DONE_EPOCH + COOLDOWN_SEC ))"
 
+# This log is intended for publication. Hostname/IP/URL values are deliberately omitted.
 {
   echo "STEP_NAME=$STEP_NAME"
   echo "RUN_ID=$RUN_ID"
   echo "NAMESPACE=$NS"
   echo "SERVICE_NAME=$SERVICE_NAME"
-  echo "LABEL_SELECTOR=$LABEL_SELECTOR"
-  echo "POD_NAME=$POD_NAME"
-  echo "NODE_NAME=$NODE_NAME"
-  echo "NODE_IP=$NODE_IP"
-  echo "NODEPORT=$NODEPORT"
-  echo "BASE_URL=$BASE_URL"
   echo "ENDPOINT_PATH=$ENDPOINT_PATH"
   echo "START_EPOCH=$START_EPOCH"
   echo "READY_EPOCH=$READY_EPOCH"
   echo "LOAD_START_EPOCH=$LOAD_START_EPOCH"
   echo "LOAD_END_EPOCH=$LOAD_END_EPOCH"
+  echo "REQUESTS_DONE_EPOCH=$REQUESTS_DONE_EPOCH"
   echo "END_EPOCH=$END_EPOCH"
   echo "RPS=$RPS"
   echo "LOAD_DURATION_SEC=$LOAD_DURATION_SEC"
   echo "COOLDOWN_SEC=$COOLDOWN_SEC"
   echo "N_PREDICT=$N_PREDICT"
   echo "TEMPERATURE=$TEMPERATURE"
-  echo "PROMPTS_FILE=$PROMPTS_FILE"
+  echo "NETDATA_GROUP_SEC=$NETDATA_GROUP_SEC"
+  echo "PROMPTS_FILE=$(basename "$PROMPTS_FILE")"
 } > "$LOG_FILE"
 
 NOW="$(date +%s)"
@@ -145,20 +150,19 @@ export_chart() {
   local after="$2"
   local before="$3"
   local out="$4"
-  local url="${NETDATA_URL%/}/api/v1/data"
-  curl -sfG "$url" \
+  curl -sfG "${NETDATA_URL%/}/api/v1/data" \
     --data-urlencode "chart=$chart" \
     --data-urlencode "after=$after" \
     --data-urlencode "before=$before" \
     --data-urlencode "format=csv" \
     --data-urlencode "group=average" \
-    --data-urlencode "gtime=$NETDATA_GROUP_SEC" \
-    > "$out"
+    --data-urlencode "gtime=$NETDATA_GROUP_SEC" > "$out"
+  [[ -s "$out" ]] || { echo "ERROR: empty Netdata export for $chart"; return 1; }
 }
 
-export_chart "$NETDATA_CHART_CPU" "$START_EPOCH" "$END_EPOCH" "$NETDATA_DIR/system_cpu.csv" || true
-export_chart "$NETDATA_CHART_RAM" "$START_EPOCH" "$END_EPOCH" "$NETDATA_DIR/system_ram.csv" || true
-export_chart "$NETDATA_CHART_DISK_UTIL" "$START_EPOCH" "$END_EPOCH" "$NETDATA_DIR/disk_util_mmcblk0.csv" || true
-export_chart "$NETDATA_CHART_NET" "$START_EPOCH" "$END_EPOCH" "$NETDATA_DIR/net_eth0.csv" || true
+export_chart "$NETDATA_CHART_CPU" "$START_EPOCH" "$END_EPOCH" "$NETDATA_DIR/system_cpu.csv"
+export_chart "$NETDATA_CHART_RAM" "$START_EPOCH" "$END_EPOCH" "$NETDATA_DIR/system_ram.csv"
+export_chart "$NETDATA_CHART_DISK_UTIL" "$START_EPOCH" "$END_EPOCH" "$NETDATA_DIR/disk_util_mmcblk0.csv"
+export_chart "$NETDATA_CHART_NET" "$START_EPOCH" "$END_EPOCH" "$NETDATA_DIR/net_eth0.csv"
 
 echo "DONE run=$RUN_ID"

@@ -1,144 +1,136 @@
-# 한 줄 요약
+# K3s Lifecycle & TinyLlama Workload Profiling
 
-- ARM64 기반 4노드 K3s 클러스터에서 라이프사이클 이벤트와 TinyLlama 추론 워크로드의 CPU·메모리·디스크·네트워크 사용량 및 처리시간을 반복 측정하고, 재현 가능한 분석 파이프라인으로 정리한 프로젝트
+ARM64 기반 소형 K3s 클러스터에서 클러스터 시작·배포·스케일링·재시작·삭제와
+TinyLlama 추론 워크로드의 처리시간 및 시스템 자원 변화를 반복 측정한 프로젝트입니다.
 
-## 실험 목적
+> **현재 상태:** 기존 하드웨어를 더 이상 사용할 수 없어 과거 실험을 재수행하지
+> 못했습니다. 라이프사이클 처리시간은 기존 이벤트 로그에서 확인할 수 있지만,
+> 5초 간격 자원 측정치는 짧은 이벤트의 정밀 benchmark가 아닌 참고용 시계열입니다.
+> 과거 step17 결과는 실제 1 RPS를 입증하지 못해 검증 제외했습니다.
+> 자세한 판단 기준은 [결과 유효성 문서](docs/RESULT_VALIDITY.md)를 참고하세요.
 
-K3s에서 특정 작업(시작, 배포, 스케일, 삭제 등)을 할 때 CPU/메모리/디스크 사용량이 얼마나 올라가는지와 그 작업이 끝나는 데 시간이 얼마나 소요되는지 직접 측정하여 정리한다.
+## 프로젝트에서 확인하려던 것
 
-또한 동일 시나리오를 반복 실행하여 측정 결과의 분포(평균, 표준편차)와 재현 안정성을 확인한다.
+1. 클러스터 라이프사이클 이벤트마다 완료시간과 자원 사용 패턴이 어떻게 다른가?
+2. 같은 이벤트를 반복했을 때 결과의 변동 폭은 어느 정도인가?
+3. K3s 비활성 상태, 유휴 상태, 일반 Deployment, LLM 추론 워크로드의 오버헤드는 어떻게 다른가?
 
-## 질문
+## 테스트베드 범위
 
-1. 라이프사이클 이벤트 종류에 따라 CPU/Memory/Disk 사용량의 변화 패턴(peak, mean)은 어떻게 달라지는가?
-2. 각 이벤트의 소요 시간은 어느 정도이며 반복 실행 시 변동 폭(표준편차)은 얼마나 발생하는가?
-3. 클러스터 비활성 상태(system idle)와 클러스터 활성 상태(cluster idle)의 기본 오버헤드는 어떻게 다른가?
+| Phase | 구성 | 목적 |
+|---|---|---|
+| A | master 1 + worker 1 | K3s 라이프사이클 이벤트 측정 |
+| B | master 1 + worker 3 | TinyLlama 배포·스케일·추론 워크로드 확장 실험 |
 
-## 환경 및 수집 방법
+- Architecture: ARM64 / aarch64
+- K3s: `v1.34.3+k3s1`
+- Monitoring: Netdata, 5초 평균으로 export
+- Event clock: Unix epoch second
+- 상세 사양: [`docs/setup`](docs/setup)
 
-- 환경
-    - 초기 실험 환경: master 1 + worker 1
-    - 확장 실험 환경: master 1 + worker 3
-- 아키텍처: ARM64
-- 모니터링: netdata를 사용하여 CPU/Memory/Disk 지표를 5초 간격으로 수집
-- 이벤트 로그: ansible 실행 로그에 이벤트 시작/종료 시간(start/end timestamp)을 함께 기록
-    - 예: 배포 이벤트 종료 시각은 kubectl rollout status 완료 시점으로 정의
+```mermaid
+flowchart LR
+    R[Experiment scripts] --> K[K3s control plane]
+    K --> W1[ARM64 worker]
+    K --> W2[ARM64 workers - Phase B]
+    W1 --> N[Netdata]
+    W2 --> N
+    R --> L[Event logs]
+    N --> D[Metric CSV]
+    L --> A[Analysis pipeline]
+    D --> A
+    A --> O[Statistics and plots]
+```
 
-## 실험 과정(2노드 환경)
+## 실험 매트릭스
 
-2노드 환경에서는 다수 worker 추가 실험의 의미가 제한적, 운영 관점 이벤트 중심으로 구성
+| Step | Scenario | 보존된 run | 결과 상태 |
+|---:|---|---:|---|
+| 01 | System idle | 10 | 참고용 |
+| 02 | Start master | 10 | 시간 유효 / 자원 참고용 |
+| 03 | Cluster idle | 10 | 참고용 |
+| 04 | Apply nginx Deployment | 10 | 시간 유효 / 자원 참고용 |
+| 05 | Nginx Deployment idle | 10 | 참고용 |
+| 06 | Scale up/down | 10 | 시간 유효 / 일부 지표 누락 |
+| 07 | Rollout restart | 10 | 시간 유효 / 자원 참고용 |
+| 08 | Cordon/uncordon | 10 | 일부 지표 누락 |
+| 09 | Stop cluster / final idle | 1 | 탐색적 결과 |
+| 10 | Delete nginx Deployment | 10 | 시간 유효 / 자원 정밀도 제한 |
+| 11 | Network observation | 10 | 참고용 |
+| 12 | Apply TinyLlama HTTP | 10 | 참고용 |
+| 13 | TinyLlama idle | 10 | 참고용 |
+| 14 | TinyLlama scale up/down | 10 | 참고용 |
+| 15 | TinyLlama rollout restart | 10 | 참고용 |
+| 16 | Delete TinyLlama Deployment | 1 | 탐색적 결과 |
+| 17 | Scheduled TinyLlama inference load | 10 | **기존 결과 검증 제외** |
 
-1. **System idle(클러스터 OFF baseline)**
-    1. systemctl stop k3s + (worker) systemctl stop k3s-agent
-    2. 측정: 300초 고정
-2. **Start master**
-    1. 시작: systemctl start k3s 실행 시각
-    2. 끝: kubectl get nodes에서 master가 Ready가 되는 첫 시작
-    3. 측정: start ~ end + (추가 안정화 60초)
-3. **Cluster idle(클러스터 ON, 워크로드 없음)**
-    1. 조건: nginx 없음, 노드 Ready 상태
-    2. 측정: 300초 고정
-4. **Apply deployment(nginx, 가능하면 replicas = 3 유지)**
-    1. start: kubectl apply 실행 시각
-    2. end: kubectl rollout status deployment/nginx 성공 시각
-    3. 측정: start ~ end(rollout 완료까지)
-5. **Deployment idle(안정화 구간)**
-    1. apply 완료 후 300초 고정
-6. **Scale up/down(1 → 3 → 1)**
-    1. scale down: 3 → 1
-        1. start: kubectl scale —replicas=1
-        2. end: rollout status 완료
-        3. 측정: start ~ end
-    2. scale up: 1 → 3
-        1. start: kubectl scale —replicas=3
-        2. end: rollout status 완료
-7. **Rollout restart(재배포 이벤트)**
-    1. start: kubectl rollout restart deployment/nginx 실행 시각
-    2. end: kubectl rollout status deployment/nginx
-8. **Rollout Restart**
-    1. start: kubectl rollout restart deployment/nginx
-    2. end: kubectl rollout status 성공
-    3. 측정: start ~ end
-    4. 예상: CPU/Memory spike
-9. **Cordon/Uncordon worker(스케줄링 제한/해제) 배포 시 pending/fail 관찰**
-    1. Cordon worker
-        1. start: kubectl cordon worker 실행
-        2. end: 즉시(명령 완료)
-        3. 측정: 전후 60초씩
-    2. Deploy with cordoned node
-        1. nginx scale=3 시도 → pending 관찰
-        2. 측정: pending 지속 시간
-    3. Uncordon worker
-        1. start: kubectl uncordon worker
-        2. end: pending pod들이 Running 되는 시점
-        3. 측정: start ~ end
-10. **Stop/최종 idle**
-    1. start: systemctl stop k3s (+worker stop)
-    2. end: kubectl get nodes 불가 → inactive 확인 시각
-    3. 측정: stop 직후 60초 정도(리소스 하강 관찰)
-11. **Delete Deployment**
-    1. start: kubectl delete deployment nginx
-    2. end: deployment 삭제 확인
-    3. 측정: start ~ end
-    4. 예상: Memory 감소 
+`참고용`은 원시 Netdata CSV가 저장소에 없어 재계산할 수 없거나, 5초 집계보다
+짧은 이벤트가 포함되어 resource peak/AUC를 정밀 수치로 해석할 수 없다는 뜻입니다.
 
-## 분석 방법 및 산출물
+## 로그에서 확인 가능한 대표 처리시간
 
-**이벤트별 계산**
+| Event | Runs | Mean | 해석 |
+|---|---:|---:|---|
+| Master start → Ready | 10 | 13.7 s | 기존 README의 43.7초에는 Ready 이후 30초 안정화 구간이 포함되어 있었음 |
+| Apply nginx → rollout complete | 10 | 6.8 s | 이벤트 timestamp 기준 |
+| Rollout restart → complete | 10 | 9.1 s | 이벤트 timestamp 기준 |
 
-- Peak / Mean / AUC(누적 사용량) / Duration(소요 시간)
+위 시간은 초 단위 이벤트 로그에서 계산한 기술통계이며 다른 하드웨어에 일반화할 수
+있는 성능 기준값은 아닙니다. CPU·RAM·Disk peak 수치는 샘플링 한계 때문에 대표
+성과 수치에서 제외했습니다.
 
-**반복 실험**
+## Step17 교정 사항
 
-- 각 시나리오를 최대 10회 반복하여 평균, 표준편차 및 실행별 변동을 분석했다.
+기존 `load_1rps.py`는 한 요청이 끝난 뒤 다음 요청을 보내는 순차 방식이어서,
+느린 응답이 클라이언트 backlog로 누적되었습니다. 그 결과는 지속적인 1 RPS 부하를
+입증하지 못합니다. 현재 코드는 다음을 반영했습니다.
 
-**대표 산출물**
+- wall-clock schedule에 따라 다음 요청을 독립적으로 보내는 open-loop dispatch
+- planned RPS와 achieved dispatch RPS 분리 기록
+- HTTP 성공률, dispatch delay, TTFT/total latency p50·p95 기록
+- SSE의 실제 생성 텍스트 이벤트를 기준으로 TTFT 측정
+- 시간순 정렬 후 AUC 계산
+- CPU와 Disk utilization의 `0~100%` 범위 검증
+- 음수 방향으로 표현되는 Netdata 송신량을 magnitude로 정규화
+- 수집·분석 실패 시 성공으로 처리하지 않음
 
-- 이벤트 타임스탬프와 CPU/Memory/Disk/Network 시계열 정렬
-- 실행별 Mean / Peak / AUC / Duration 통계
-- 반복 실행 결과의 분포 시각화
-- TinyLlama HTTP 추론의 readiness 및 요청 지연시간 측정
+이 교정 코드는 기존 하드웨어에서 다시 실행되지 않았으므로 새로운 benchmark 결과를
+제시하지 않습니다.
 
-## 주요 결과
+## 실행 환경과 사용 방법
 
-| Event | Runs | Duration Mean | CPU Peak | Memory Mean |
-|---|---:|---:|---:|---:|
-| Start master | 10 | 43.7 s | 79.4% | 1,192.5 MB |
-| Apply deployment | 10 | 6.8 s | 73.6% | 1,391.1 MB |
-| Rollout restart | 10 | 9.1 s | 59.1% | 1,422.0 MB |
+Python 분석 의존성은 다음과 같이 설치할 수 있습니다.
 
-- Start master는 평균 43.7초로 세 이벤트 중 처리 시간이 가장 길었으며, 평균 CPU peak도 79.4%로 가장 높게 나타났다.
-- Apply deployment는 평균 6.8초가 소요되었으며, 배포 과정에서 평균 73.6%의 CPU peak가 관찰됐다.
-- Rollout restart는 평균 9.1초가 소요되었으며, 재배포 과정에서 평균 59.1%의 CPU peak가 나타났다.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-## 대표 실행 결과
+실제 step17 수집에는 실행 가능한 K3s/Netdata/TinyLlama 환경과 `kubectl`, `curl`,
+`jq`가 필요합니다.
 
-### TinyLlama HTTP 추론 부하 실험 — Run 3
+```bash
+RUNS=10 RPS=1 LOAD_DURATION_SEC=60 \
+  scripts/step17_infer_load_1rps_tinyllama_http/run_all.sh
+```
 
-<p align="center">
-  <img
-    src="results/step17_infer_load_1rps_tinyllama_http/run_3/fig1_timeseries.png"
-    alt="TinyLlama HTTP inference workload resource profiling"
-    width="850"
-  >
-</p>
+현재 저장소에는 과거 원시 Netdata 데이터가 없으므로 기존 결과의 재분석 명령은
+제공하지 않습니다. 향후 실행에서는 `data/netdata/`의 원시 CSV와 환경 snapshot을
+함께 보존해야 합니다.
 
-TinyLlama HTTP 추론 워크로드를 1 RPS로 실행하며
-CPU, RAM, Disk 및 Network 사용량을 측정했다.
-READY, LOAD_START, LOAD_END, END 시점을 시스템 시계열과 정렬하여
-추론 부하 전후의 자원 사용량 변화를 분석했다.
+## 저장소 구성
 
-## 기대 효과
+- `scripts/`: 실험 수집 및 자동화 스크립트
+- `analysis/`: 통계 계산과 시각화 코드
+- `logs/redacted/`: 공개 가능한 이벤트 로그
+- `results/`: 과거 실행별 통계와 그래프
+- `docker/`: TinyLlama HTTP 환경
+- `docs/`: 설치 기록, 장비 사양, 결과 유효성 설명
 
-배포 / 스케일 / 롤아웃 / 스케줄링 제한 등의 운영 이벤트에서 발생하는 오버헤드 패턴을 정량적으로 확인할 수 있다.
+## 주요 한계
 
-## 한계
-
-논문과 같은 다수 worker 확장 비교는 제한적이다. 대신 2노드 환경에 적합한 운영 이벤트 중심으로 목표를 명확하게 한다.
-
-- `scripts/`: 실험 자동화 스크립트
-- `analysis/`: 통계 계산 및 시각화 코드
-- `data/netdata/`: Netdata에서 수집한 시계열 데이터
-- `logs/redacted/`: 개인정보와 접속정보를 제거한 실험 로그
-- `results/`: 실행별 통계 및 그래프
-- `docker/`: TinyLlama HTTP 추론 환경 구성
+- 기존 physical ARM64 클러스터를 더 이상 사용할 수 없어 재실험할 수 없습니다.
+- 5초 모니터링 집계는 1~10초 수준 이벤트의 순간 peak 측정에 충분하지 않습니다.
+- 원시 Netdata CSV와 step17 요청 원본이 보존되지 않아 과거 파생 통계를 재검산할 수 없습니다.
+- 결과는 단일 홈랩 환경의 관측값이며 K3s 일반 성능으로 해석할 수 없습니다.
