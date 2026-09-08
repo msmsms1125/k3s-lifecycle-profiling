@@ -14,7 +14,7 @@ deployment.apps/tinyllama-server restarted
 Waiting for deployment "tinyllama-server" rollout to finish: 1 old replicas are pending termination...
 Waiting for deployment "tinyllama-server" rollout to finish: 1 old replicas are pending termination...
 deployment "tinyllama-server" successfully rolled out
-BASE_IP=192.168.50.162
+BASE_IP=worker-b
 READY_EPOCH=1771588445
 READY_KST=2026-02-20 20:54:05 KST
 T_READY_SEC=48
