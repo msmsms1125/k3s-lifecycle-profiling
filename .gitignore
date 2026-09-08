@@ -22,3 +22,5 @@ logs/*
 !logs/redacted/
 !logs/redacted/**
 .venv/
+__pycache__/
+*.py[cod]

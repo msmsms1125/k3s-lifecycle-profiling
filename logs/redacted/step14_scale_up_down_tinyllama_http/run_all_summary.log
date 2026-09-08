@@ -45,18 +45,18 @@ START(KST): 2026-02-20 15:54:38 KST
 --- RUN 10/10 END(KST): 2026-02-20 17:02:03 KST ---
 
 === plotting Fig1/Fig2 ===
-[run_1] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_1/fig1_timeseries.png
-[run_2] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_2/fig1_timeseries.png
-[run_3] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_3/fig1_timeseries.png
-[run_4] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_4/fig1_timeseries.png
-[run_5] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_5/fig1_timeseries.png
-[run_6] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_6/fig1_timeseries.png
-[run_7] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_7/fig1_timeseries.png
-[run_8] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_8/fig1_timeseries.png
-[run_9] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_9/fig1_timeseries.png
-[run_10] Fig1 -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/run_10/fig1_timeseries.png
+[run_1] Fig1 -> <repo-root>/results/step14_scale_up_down_tinyllama_http/run_1/fig1_timeseries.png
+[run_2] Fig1 -> <repo-root>/results/step14_scale_up_down_tinyllama_http/run_2/fig1_timeseries.png
+[run_3] Fig1 -> <repo-root>/results/step14_scale_up_down_tinyllama_http/run_3/fig1_timeseries.png
+[run_4] Fig1 -> <repo-root>/results/step14_scale_up_down_tinyllama_http/run_4/fig1_timeseries.png
+[run_5] Fig1 -> <repo-root>/results/step14_scale_up_down_tinyllama_http/run_5/fig1_timeseries.png
+[run_6] Fig1 -> <repo-root>/results/step14_scale_up_down_tinyllama_http/run_6/fig1_timeseries.png
+[run_7] Fig1 -> <repo-root>/results/step14_scale_up_down_tinyllama_http/run_7/fig1_timeseries.png
+[run_8] Fig1 -> <repo-root>/results/step14_scale_up_down_tinyllama_http/run_8/fig1_timeseries.png
+[run_9] Fig1 -> <repo-root>/results/step14_scale_up_down_tinyllama_http/run_9/fig1_timeseries.png
+[run_10] Fig1 -> <repo-root>/results/step14_scale_up_down_tinyllama_http/run_10/fig1_timeseries.png
 
-Summary -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/summary.csv
+Summary -> <repo-root>/results/step14_scale_up_down_tinyllama_http/summary.csv
  run  T_scale_up  T_scale_down  T_total  cpu_peak   ram_peak  net_rx_peak_kbps
    1          51            23      412 29.641198 1385.88126           0.00000
    2          49            24      414 62.008831 1393.09922           0.00031
@@ -68,7 +68,7 @@ Summary -> /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down
    8          39            27      397 73.381385 1381.47424           0.00000
    9          52            24      395 21.510077 1371.78830           0.00000
   10          38            21      336 66.743924 1357.77812           0.00000
-Fig2 saved: /home/yhgwpi/ms-k3s-performance-analysis/results/step14_scale_up_down_tinyllama_http/fig2_distribution.png
+Fig2 saved: <repo-root>/results/step14_scale_up_down_tinyllama_http/fig2_distribution.png
 ========================================
 END(KST): 2026-02-20 17:02:39 KST
 ========================================
