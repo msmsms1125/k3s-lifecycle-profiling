@@ -1,0 +1,8 @@
+phase,scenario,metric,n,mean_sec,median_sec,min_sec,max_sec,source
+A,K3s master start to Ready,T_READY_SEC,10,13.7,12.0,12.0,23.0,logs/redacted/step02_start_master/run_*.log
+A,Nginx apply to rollout complete,T_total,10,6.8,3.5,3.0,19.0,logs/redacted/step04_apply_deployment/run_*.log
+A,Nginx scale down and up,T_total,10,5.3,4.0,4.0,9.0,logs/redacted/step06_scale_up_down/run_*.log
+A,Nginx rollout restart,T_total,10,9.1,9.0,6.0,12.0,logs/redacted/step07_rollout_restart/run_*.log
+B,TinyLlama scale 1 to 3 Ready,T_scale_up,10,43.6,40.0,38.0,52.0,logs/redacted/step14_scale_up_down_tinyllama_http/run_*.log
+B,TinyLlama scale 3 to 1 complete,T_scale_down,10,23.6,23.5,21.0,27.0,logs/redacted/step14_scale_up_down_tinyllama_http/run_*.log
+B,TinyLlama rollout restart to Ready,T_READY_SEC,10,37.8,35.5,35.0,48.0,logs/redacted/step15_rollout_restart_tinyllama_http/run_*.log

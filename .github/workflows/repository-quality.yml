@@ -26,6 +26,9 @@ jobs:
       - name: Verify repository structure and publishable artifacts
         run: python tools/verify_repository.py
 
+      - name: Verify portfolio evidence summary
+        run: python tools/build_portfolio_summary.py --check
+
       - name: Run offline regression tests
         env:
           MPLBACKEND: Agg
