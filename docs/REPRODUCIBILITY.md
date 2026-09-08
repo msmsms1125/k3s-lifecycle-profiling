@@ -10,6 +10,7 @@
 
 ```bash
 python -m pip install -r requirements.txt
+python tools/build_portfolio_summary.py --check
 python tools/verify_repository.py
 MPLBACKEND=Agg python -m unittest discover -s tests -v
 find scripts -name '*.sh' -print0 | xargs -0 -n1 bash -n
@@ -17,6 +18,7 @@ find scripts -name '*.sh' -print0 | xargs -0 -n1 bash -n
 
 | 검증 항목 | 확인하는 내용 | 확인하지 못하는 내용 |
 |---|---|---|
+| Portfolio evidence check | 공개 로그 60개와 추적 중인 시간 요약 CSV의 일치 | 원래 장비의 재실행 성공 |
 | Repository verifier | Python 문법, 문서 링크, 17개 step 구조, 의존성 선언, prompt 구성 | 실제 클러스터 명령 성공 여부 |
 | Redaction gate | 공개 로그의 사용자 홈 경로, 사설 IP, secret 형태 값 | Git 과거 commit의 완전한 이력 삭제 |
 | Step17 unit tests | SSE token 판별, 요청 schedule, 분석 guard | 실제 TinyLlama 응답 품질 |
@@ -62,5 +64,5 @@ Step17 결과가 검증 제외된 이유도 이 조건을 충족하지 못했기
 - 기존 Step17 수치는 portfolio 성과나 지속 1 RPS의 근거로 사용하지 않습니다.
 - 새 장비에서 얻은 결과는 과거 결과와 섞지 않고 별도 환경으로 보고해야 합니다.
 
-세부 결과 분류는 [Result validity and correction record](RESULT_VALIDITY.md)를
-참고하세요.
+세부 결과 분류는 [Result validity and correction record](RESULT_VALIDITY.md), 수치별
+출처와 허용하는 표현은 [Evidence map](EVIDENCE_MAP.md)을 참고하세요.
