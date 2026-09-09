@@ -23,16 +23,5 @@ jobs:
       - name: Install analysis dependencies
         run: python -m pip install -r requirements.txt
 
-      - name: Verify repository structure and publishable artifacts
-        run: python tools/verify_repository.py
-
-      - name: Verify portfolio evidence summary
-        run: python tools/build_portfolio_summary.py --check
-
-      - name: Run offline regression tests
-        env:
-          MPLBACKEND: Agg
-        run: python -m unittest discover -s tests -v
-
-      - name: Check shell syntax
-        run: find scripts -name '*.sh' -print0 | xargs -0 -n1 bash -n
+      - name: Run hardware-independent quality suite
+        run: python tools/run_offline_checks.py --require-shell-syntax

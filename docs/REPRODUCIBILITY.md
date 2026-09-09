@@ -10,6 +10,12 @@
 
 ```bash
 python -m pip install -r requirements.txt
+python tools/run_offline_checks.py
+```
+
+한 번에 실행하지 않고 개별 결과를 확인하려면 다음 명령을 사용합니다.
+
+```bash
 python tools/build_portfolio_summary.py --check
 python tools/verify_repository.py
 MPLBACKEND=Agg python -m unittest discover -s tests -v
@@ -25,8 +31,9 @@ find scripts -name '*.sh' -print0 | xargs -0 -n1 bash -n
 | Slow SSE integration test | 1초 응답 중에도 2 RPS dispatch가 유지되는지 | Raspberry Pi에서의 처리량과 지연시간 |
 | Shell syntax | 모든 `*.sh`의 Bash 문법 | `kubectl`, `systemctl`, Netdata API의 runtime 동작 |
 
-GitHub Actions의 `Repository quality` workflow가 pull request와 push마다 같은 검증을
-실행합니다.
+GitHub Actions의 `Repository quality` workflow는
+`python tools/run_offline_checks.py --require-shell-syntax`를 실행하므로 로컬 진입점과
+CI의 검사 구성이 같습니다.
 
 ## Step17 재실험 시 보존해야 할 파일
 

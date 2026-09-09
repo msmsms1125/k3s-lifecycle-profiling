@@ -6,8 +6,8 @@ ARM64 기반 소형 K3s 클러스터에서 클러스터 시작·배포·스케�
 TinyLlama 추론 워크로드의 처리시간 및 시스템 자원 변화를 반복 측정한 프로젝트입니다.
 
 **빠르게 보기:** [포트폴리오 케이스 스터디](docs/PORTFOLIO_CASE_STUDY.md) ·
-[수치별 증거 맵](docs/EVIDENCE_MAP.md) · [결과 유효성](docs/RESULT_VALIDITY.md) ·
-[재현성 가이드](docs/REPRODUCIBILITY.md)
+[5분 리뷰 가이드](docs/REVIEW_GUIDE.md) · [수치별 증거 맵](docs/EVIDENCE_MAP.md) ·
+[결과 유효성](docs/RESULT_VALIDITY.md) · [재현성 가이드](docs/REPRODUCIBILITY.md)
 
 > **현재 상태:** 기존 하드웨어를 더 이상 사용할 수 없어 과거 실험을 재수행하지
 > 못했습니다. 라이프사이클 처리시간은 기존 이벤트 로그에서 확인할 수 있지만,
@@ -31,6 +31,9 @@ TinyLlama 추론 워크로드의 처리시간 및 시스템 자원 변화를 반
 **9.1초**, TinyLlama scale-up Ready 평균 **43.6초**입니다. 모두 해당 홈랩에서
 1초 해상도로 관측한 기술통계이며, 서로 다른 phase나 다른 하드웨어 사이의 성능
 비교값은 아닙니다.
+
+저장소를 검토하거나 면접에서 설명할 때는 [5분 리뷰 가이드](docs/REVIEW_GUIDE.md)의
+코드·근거 동선과 30초 소개, 이력서 문장 예시를 사용할 수 있습니다.
 
 ## 프로젝트에서 확인하려던 것
 
@@ -154,6 +157,12 @@ pip install -r requirements.txt
 하드웨어 없이 가능한 저장소 검증은 다음과 같습니다.
 
 ```bash
+python tools/run_offline_checks.py
+```
+
+위 명령은 아래 개별 검사를 한 번에 실행합니다.
+
+```bash
 python tools/build_portfolio_summary.py --check
 python tools/verify_repository.py
 MPLBACKEND=Agg python -m unittest discover -s tests -v
@@ -184,9 +193,10 @@ RUNS=10 RPS=1 LOAD_DURATION_SEC=60 \
 - `docker/`: TinyLlama HTTP 환경
 - `docs/`: 설치 기록, 장비 사양, 결과 유효성 설명
 - `docs/PORTFOLIO_CASE_STUDY.md`: 문제·설계·결과·교정 과정을 연결한 포트폴리오 본문
+- `docs/REVIEW_GUIDE.md`: 5분 검토 동선, 30초 소개, 이력서·면접 표현 가이드
 - `docs/EVIDENCE_MAP.md`: 주장별 증거 등급과 근거 파일
 - `tests/`: Step17 부하·분석 로직의 하드웨어 독립 회귀 테스트
-- `tools/`: 로그 기반 포트폴리오 집계와 저장소·익명화 검사
+- `tools/`: 단일 품질 검사 진입점, 로그 기반 집계와 저장소·익명화 검사
 - `.github/workflows/`: pull request와 push에서 실행되는 오프라인 품질 gate
 
 ## 주요 한계
