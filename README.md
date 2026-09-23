@@ -1,5 +1,4 @@
 # K3s Lifecycle & TinyLlama Workload Profiling
-[![Repository quality](https://github.com/msmsms1125/k3s-lifecycle-profiling/actions/workflows/repository-quality.yml/badge.svg)](https://github.com/msmsms1125/k3s-lifecycle-profiling/actions/workflows/repository-quality.yml)
 
 ARM64 기반 소형 K3s 클러스터에서 클러스터 시작·배포·스케일링·재시작·삭제와
 TinyLlama 추론 워크로드의 처리시간 및 시스템 자원 변화를 반복 측정한 프로젝트입니다.
